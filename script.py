@@ -2,11 +2,16 @@ import requests
 import pandas as pd
 import json
 import os
+import time
 from datetime import date
 
 API_KEY = '***GOOGLE_KEY_ROTADA***'
 USAGE_FILE = 'usage.json'
+STATE_FILE = 'search_state.json'
+CSV_FILE = 'Leads Google Maps.csv'
 LIMITE_DIARIO = 10
+MAX_POR_LLAMADA = 10
+BUSQUEDA = 'negocios locales España'
 
 # --- Control de límite diario ---
 
@@ -33,15 +38,33 @@ def verificar_limite():
     print(f"Búsqueda {uso['contador']}/{LIMITE_DIARIO} del día.")
     return uso
 
-# --- Búsqueda de negocios en Madrid ---
+# --- Estado de paginación ---
 
-def buscar_negocios(query):
-    url = (
-        f'https://maps.googleapis.com/maps/api/place/textsearch/json'
-        f'?query={query}&key={API_KEY}'
-    )
+def cargar_estado():
+    if os.path.exists(STATE_FILE):
+        with open(STATE_FILE, 'r') as f:
+            return json.load(f)
+    return {'place_ids_pendientes': [], 'next_page_token': None, 'pagina': 0}
+
+def guardar_estado(estado):
+    with open(STATE_FILE, 'w') as f:
+        json.dump(estado, f)
+
+def resetear_estado():
+    guardar_estado({'place_ids_pendientes': [], 'next_page_token': None, 'pagina': 0})
+
+# --- API de Google Places ---
+
+def buscar_pagina(query=None, page_token=None):
+    if page_token:
+        # Google requiere ~2s de espera antes de usar el token de siguiente página
+        time.sleep(2)
+        url = f'https://maps.googleapis.com/maps/api/place/textsearch/json?pagetoken={page_token}&key={API_KEY}'
+    else:
+        url = f'https://maps.googleapis.com/maps/api/place/textsearch/json?query={query}&key={API_KEY}'
     response = requests.get(url)
-    return response.json().get('results', [])
+    data = response.json()
+    return data.get('results', []), data.get('next_page_token')
 
 CATEGORIAS_ES = {
     'restaurant': 'Restaurante',
@@ -106,34 +129,69 @@ uso = verificar_limite()
 if uso is None:
     exit()
 
-busqueda = 'negocios locales Madrid'
-print(f"Buscando: {busqueda}")
+estado = cargar_estado()
 
-lugares = buscar_negocios(busqueda)
+# Si no hay place_ids pendientes, hay que buscar la siguiente página
+if not estado['place_ids_pendientes']:
+    if estado['next_page_token'] is None and estado['pagina'] > 0:
+        print("Ya se han procesado todos los resultados disponibles para esta búsqueda.")
+        print("Reseteando para empezar de nuevo...")
+        resetear_estado()
+        estado = cargar_estado()
+
+    if estado['next_page_token'] or estado['pagina'] == 0:
+        pagina_num = estado['pagina'] + 1
+        print(f"Obteniendo página {pagina_num} de resultados para: {BUSQUEDA}")
+        lugares, next_token = buscar_pagina(
+            query=BUSQUEDA if estado['pagina'] == 0 else None,
+            page_token=estado['next_page_token']
+        )
+        place_ids = [l['place_id'] for l in lugares if l.get('place_id')]
+        estado = {
+            'place_ids_pendientes': place_ids,
+            'next_page_token': next_token,
+            'pagina': pagina_num,
+        }
+        guardar_estado(estado)
+        print(f"  → {len(place_ids)} ubicaciones en esta página. {'Hay más páginas.' if next_token else 'Esta es la última página.'}")
+
+# Tomar hasta MAX_POR_LLAMADA place_ids del estado
+lote = estado['place_ids_pendientes'][:MAX_POR_LLAMADA]
+estado['place_ids_pendientes'] = estado['place_ids_pendientes'][MAX_POR_LLAMADA:]
+guardar_estado(estado)
+
+print(f"Procesando {len(lote)} ubicaciones (quedan {len(estado['place_ids_pendientes'])} en cola)...")
+
 resultados = []
-
-for lugar in lugares:
-    place_id = lugar.get('place_id')
-    if not place_id:
-        continue
-
+for place_id in lote:
     detalles = obtener_detalles(place_id)
 
     # Filtrar: solo negocios SIN página web
     if detalles.get('website'):
         continue
 
-    tipos = detalles.get('types', lugar.get('types', []))
+    tipos = detalles.get('types', [])
     resultados.append({
-        'Nombre del negocio': detalles.get('name', lugar.get('name')),
-        'Email': '',  # Google Places API no proporciona email
+        'Nombre del negocio': detalles.get('name', ''),
+        'Email': '',
         'Categoría': tipo_a_categoria(tipos),
-        'Ubicación': detalles.get('formatted_address', lugar.get('formatted_address')),
+        'Ubicación': detalles.get('formatted_address', ''),
         'Teléfono': detalles.get('formatted_phone_number', ''),
     })
 
-df = pd.DataFrame(resultados, columns=['Nombre del negocio', 'Email', 'Categoría', 'Ubicación', 'Teléfono'])
-df.to_csv('Leads Google Maps.csv', index=False, encoding='utf-8-sig')
+# --- Guardar acumulando en CSV ---
 
-print(f"{len(resultados)} negocios sin web encontrados en Madrid.")
-print("Guardados en 'Leads Google Maps.csv'")
+columnas = ['Nombre del negocio', 'Email', 'Categoría', 'Ubicación', 'Teléfono']
+df_nuevo = pd.DataFrame(resultados, columns=columnas)
+
+if os.path.exists(CSV_FILE):
+    df_existente = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+    df_total = pd.concat([df_existente, df_nuevo], ignore_index=True)
+    df_total = df_total.drop_duplicates(subset=['Nombre del negocio', 'Ubicación'])
+else:
+    df_total = df_nuevo
+
+df_total.to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
+
+print(f"{len(resultados)} negocios sin web añadidos.")
+print(f"Total acumulado en '{CSV_FILE}': {len(df_total)} negocios.")
