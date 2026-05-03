@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import os
 import time
+import random
 from datetime import date
 
 API_KEY = '***GOOGLE_KEY_ROTADA***'
@@ -11,7 +12,25 @@ STATE_FILE = 'search_state.json'
 CSV_FILE = 'Leads Google Maps.csv'
 LIMITE_DIARIO = 10
 MAX_POR_LLAMADA = 10
-BUSQUEDA = 'negocios locales España'
+
+_TIPOS_NEGOCIO = [
+    'restaurante', 'cafetería', 'bar', 'panadería', 'peluquería',
+    'tienda de ropa', 'gimnasio', 'farmacia', 'dentista', 'fontanero',
+    'electricista', 'taller de coches', 'inmobiliaria', 'veterinario',
+    'floristería', 'zapatería', 'ferretería', 'librería', 'spa',
+    'agencia de viajes', 'supermercado', 'lavandería', 'joyería',
+]
+
+_CIUDADES_ESPAÑA = [
+    'Madrid', 'Barcelona', 'Valencia', 'Sevilla', 'Zaragoza',
+    'Málaga', 'Murcia', 'Palma', 'Bilbao', 'Alicante',
+    'Córdoba', 'Valladolid', 'Vigo', 'Gijón', 'Granada',
+    'Elche', 'Oviedo', 'Badalona', 'Cartagena', 'Terrassa',
+    'Sabadell', 'Jerez', 'Móstoles', 'Almería', 'Fuenlabrada',
+    'Hospitalet', 'Santander', 'Burgos', 'Albacete', 'Getafe',
+]
+
+BUSQUEDA = f'{random.choice(_TIPOS_NEGOCIO)} en {random.choice(_CIUDADES_ESPAÑA)}'
 
 # --- Control de límite diario ---
 
@@ -129,31 +148,18 @@ uso = verificar_limite()
 if uso is None:
     exit()
 
+print(f"Búsqueda aleatoria: '{BUSQUEDA}'")
+
+# Cada ejecución arranca con una búsqueda nueva y distinta
+resetear_estado()
 estado = cargar_estado()
 
-# Si no hay place_ids pendientes, hay que buscar la siguiente página
-if not estado['place_ids_pendientes']:
-    if estado['next_page_token'] is None and estado['pagina'] > 0:
-        print("Ya se han procesado todos los resultados disponibles para esta búsqueda.")
-        print("Reseteando para empezar de nuevo...")
-        resetear_estado()
-        estado = cargar_estado()
-
-    if estado['next_page_token'] or estado['pagina'] == 0:
-        pagina_num = estado['pagina'] + 1
-        print(f"Obteniendo página {pagina_num} de resultados para: {BUSQUEDA}")
-        lugares, next_token = buscar_pagina(
-            query=BUSQUEDA if estado['pagina'] == 0 else None,
-            page_token=estado['next_page_token']
-        )
-        place_ids = [l['place_id'] for l in lugares if l.get('place_id')]
-        estado = {
-            'place_ids_pendientes': place_ids,
-            'next_page_token': next_token,
-            'pagina': pagina_num,
-        }
-        guardar_estado(estado)
-        print(f"  → {len(place_ids)} ubicaciones en esta página. {'Hay más páginas.' if next_token else 'Esta es la última página.'}")
+print(f"Obteniendo resultados para: {BUSQUEDA}")
+lugares, _ = buscar_pagina(query=BUSQUEDA)
+place_ids = [l['place_id'] for l in lugares if l.get('place_id')]
+estado['place_ids_pendientes'] = place_ids
+guardar_estado(estado)
+print(f"  → {len(place_ids)} ubicaciones encontradas.")
 
 # Tomar hasta MAX_POR_LLAMADA place_ids del estado
 lote = estado['place_ids_pendientes'][:MAX_POR_LLAMADA]
