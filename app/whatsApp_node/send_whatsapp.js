@@ -79,13 +79,23 @@ async function main() {
         process.exit(1);
     }
 
+    const soloSeleccionados = process.argv.includes('--selected-only');
+
     const filas = leerCSV();
     const log = cargarLog();
     const yaEnviados = new Set(log.enviados.map(e => e.telefono));
 
-    const pendientes = filas.filter(f =>
-        f['Teléfono'] && f['Teléfono'].trim() !== '' && !yaEnviados.has(f['Teléfono'].trim())
-    );
+    const pendientes = filas.filter(f => {
+        if (!f['Teléfono'] || f['Teléfono'].trim() === '') return false;
+        if (yaEnviados.has(f['Teléfono'].trim())) return false;
+        if (soloSeleccionados) {
+            const sel = (f['selected'] || '').toString().toLowerCase();
+            return sel === 'true' || sel === '1' || sel === 'yes';
+        }
+        return true;
+    });
+
+    if (soloSeleccionados) console.log('Modo: solo leads seleccionados desde la web');
 
     console.log(`Total en CSV: ${filas.length}`);
     console.log(`Ya enviados:  ${log.enviados.length}`);

@@ -1,11 +1,366 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
 ---
-
 <Layout>
-	<Welcome />
+  <!-- ── Header ── -->
+  <header class="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-slate-900/80 backdrop-blur border-b border-slate-800">
+    <div class="flex items-center gap-2">
+      <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-green-500/10">
+        <svg class="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+        </svg>
+      </span>
+      <span class="text-base font-bold text-slate-100">Lead <span class="text-green-400">Manager</span></span>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-slate-500">
+      <span class="w-1.5 h-1.5 rounded-full bg-slate-600" id="api-dot"></span>
+      API: <span id="api-status" class="text-slate-400">comprobando...</span>
+    </div>
+  </header>
+
+  <!-- ── Stats ── -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 px-6 py-5">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">Total leads</p>
+      <p class="text-2xl font-bold text-slate-100" id="stat-total">—</p>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">Seleccionados</p>
+      <p class="text-2xl font-bold text-sky-400" id="stat-selected">—</p>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">Con teléfono</p>
+      <p class="text-2xl font-bold text-green-400" id="stat-phone">—</p>
+    </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">WA enviados</p>
+      <p class="text-2xl font-bold text-orange-400" id="stat-sent">—</p>
+    </div>
+  </div>
+
+  <!-- ── Toolbar ── -->
+  <div class="flex flex-wrap items-center gap-3 px-6 pb-4">
+    <div class="relative flex-1 min-w-48">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+      </svg>
+      <input
+        type="text"
+        id="search"
+        placeholder="Buscar por nombre, ciudad, categoría..."
+        class="w-full pl-9 pr-4 py-2 text-sm bg-slate-900 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 outline-none focus:border-green-500 transition-colors"
+      />
+    </div>
+    <button id="btn-select-all"
+      class="px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
+      Seleccionar todos
+    </button>
+    <button id="btn-deselect"
+      class="px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
+      Deseleccionar
+    </button>
+    <button id="btn-refresh"
+      class="px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors">
+      ↻ Actualizar
+    </button>
+    <button id="btn-whatsapp" disabled
+      class="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-green-500 text-white hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all ml-auto">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+      </svg>
+      Enviar WhatsApp
+    </button>
+  </div>
+
+  <!-- ── Table ── -->
+  <div class="px-6 pb-16 overflow-x-auto">
+    <div id="loading" class="flex flex-col items-center justify-center py-20 text-slate-500 gap-3">
+      <svg class="w-8 h-8 animate-spin text-slate-600" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+      </svg>
+      <span class="text-sm">Cargando leads...</span>
+    </div>
+
+    <table id="leads-table" class="hidden w-full text-sm border-collapse">
+      <thead>
+        <tr class="border-b border-slate-800">
+          <th class="w-9 px-3 py-3 text-left">
+            <input type="checkbox" id="check-all"
+              class="w-4 h-4 rounded accent-green-500 cursor-pointer" />
+          </th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Negocio</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Categoría</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ciudad</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Teléfono</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+          <th class="px-3 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Redes</th>
+        </tr>
+      </thead>
+      <tbody id="tbody" class="divide-y divide-slate-800/60"></tbody>
+    </table>
+
+    <div id="empty-state" class="hidden flex-col items-center justify-center py-20 text-slate-500 gap-3">
+      <svg class="w-10 h-10 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-3-3v6M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z"/>
+      </svg>
+      <p class="text-sm">No se encontraron leads que coincidan.</p>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div id="toast" class="toast-base"></div>
+
+  <script>
+    interface Lead {
+      id: number;
+      selected: boolean | string;
+      'Nombre del negocio'?: string;
+      'Categoría'?: string;
+      'Ubicación'?: string;
+      'Teléfono'?: string;
+      'Email'?: string;
+      Facebook?: string;
+      Instagram?: string;
+      LinkedIn?: string;
+      Twitter?: string;
+      TikTok?: string;
+      YouTube?: string;
+      [key: string]: unknown;
+    }
+
+    const API = 'http://localhost:8000';
+
+    let allLeads: Lead[] = [];
+    let filteredIds: number[] = [];
+    let toastTimer: ReturnType<typeof setTimeout> | undefined;
+
+    // ── Utilidades ──────────────────────────────────────────────────────────────
+
+    function toast(msg: string, type = 'info'): void {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = `toast-base show ${type}`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.className = 'toast-base'; }, 3500);
+    }
+
+    function ciudad(ubicacion: string | undefined): string {
+      if (!ubicacion) return '—';
+      const parts = ubicacion.split(',');
+      return parts.length >= 2 ? parts[parts.length - 2].trim() : ubicacion;
+    }
+
+    function socialLinks(lead: Lead): string {
+      const map: [keyof Lead, string, string][] = [
+        ['Facebook', 'fb', 'F'],
+        ['Instagram', 'ig', 'I'],
+        ['LinkedIn', 'li', 'in'],
+        ['Twitter', 'tw', 'X'],
+        ['TikTok', 'tt', 'T'],
+        ['YouTube', 'yt', 'Y'],
+      ];
+      return map
+        .filter(([key]) => lead[key])
+        .map(([key, cls, label]) =>
+          `<a href="${String(lead[key])}" target="_blank" class="s-${cls}" title="${String(key)}">${label}</a>`
+        )
+        .join('');
+    }
+
+    // ── Render ──────────────────────────────────────────────────────────────────
+
+    function updateStats(): void {
+      const total = allLeads.length;
+      const selected = allLeads.filter(l => l.selected).length;
+      const withPhone = allLeads.filter(l => l['Teléfono']).length;
+      const totalEl = document.getElementById('stat-total');
+      const selectedEl = document.getElementById('stat-selected');
+      const phoneEl = document.getElementById('stat-phone');
+      const btn = document.getElementById('btn-whatsapp') as HTMLButtonElement | null;
+      if (totalEl) totalEl.textContent = String(total);
+      if (selectedEl) selectedEl.textContent = String(selected);
+      if (phoneEl) phoneEl.textContent = String(withPhone);
+      if (btn) btn.disabled = selected === 0;
+    }
+
+    function renderTable(): void {
+      const searchEl = document.getElementById('search') as HTMLInputElement | null;
+      const q = searchEl?.value.toLowerCase() ?? '';
+      const tbody = document.getElementById('tbody');
+      const table = document.getElementById('leads-table');
+      const empty = document.getElementById('empty-state');
+
+      filteredIds = allLeads
+        .map((l, i) => ({ l, i }))
+        .filter(({ l }) => {
+          if (!q) return true;
+          return [l['Nombre del negocio'], l['Categoría'], l['Ubicación'], l['Teléfono'], l['Email']]
+            .some(v => v && String(v).toLowerCase().includes(q));
+        })
+        .map(({ i }) => i);
+
+      if (filteredIds.length === 0) {
+        if (table) table.classList.add('hidden');
+        if (empty) empty.classList.replace('hidden', 'flex');
+        return;
+      }
+
+      if (table) table.classList.remove('hidden');
+      if (empty) empty.classList.replace('flex', 'hidden');
+
+      if (tbody) {
+        tbody.innerHTML = filteredIds.map(i => {
+          const l = allLeads[i];
+          const sel = l.selected;
+          const socials = socialLinks(l);
+          return `
+            <tr class="${sel ? 'selected-row' : 'hover:bg-slate-900/60'} transition-colors cursor-default" data-idx="${i}">
+              <td class="px-3 py-3"><input type="checkbox" class="row-check w-4 h-4 rounded accent-green-500 cursor-pointer" data-idx="${i}" ${sel ? 'checked' : ''} /></td>
+              <td class="px-3 py-3 font-medium text-slate-200 max-w-48 truncate" title="${l['Nombre del negocio'] ?? ''}">${l['Nombre del negocio'] ?? '—'}</td>
+              <td class="px-3 py-3"><span class="badge">${l['Categoría'] ?? '—'}</span></td>
+              <td class="px-3 py-3 text-slate-400">${ciudad(l['Ubicación'])}</td>
+              <td class="px-3 py-3"><span class="badge ${l['Teléfono'] ? 'has-phone' : ''}">${l['Teléfono'] ?? '—'}</span></td>
+              <td class="px-3 py-3 text-slate-400 max-w-40 truncate" title="${l['Email'] ?? ''}">${l['Email'] ?? '—'}</td>
+              <td class="px-3 py-3"><div class="social-links">${socials || '<span class="text-slate-700">—</span>'}</div></td>
+            </tr>`;
+        }).join('');
+
+        tbody.querySelectorAll<HTMLInputElement>('.row-check').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const idx = parseInt(cb.dataset['idx'] ?? '', 10);
+            if (!isNaN(idx)) void toggleSelect([idx], cb.checked);
+          });
+        });
+      }
+
+      const checkAll = document.getElementById('check-all') as HTMLInputElement | null;
+      if (checkAll) {
+        checkAll.checked = filteredIds.length > 0 && filteredIds.every(i => allLeads[i].selected);
+      }
+
+      updateStats();
+    }
+
+    // ── API calls ────────────────────────────────────────────────────────────────
+
+    async function loadLeads(): Promise<void> {
+      const loading = document.getElementById('loading');
+      const table = document.getElementById('leads-table');
+      if (loading) loading.classList.remove('hidden');
+      if (table) table.classList.add('hidden');
+      try {
+        const res = await fetch(`${API}/api/leads`);
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json() as Lead[];
+        allLeads = data.map(l => ({ ...l, selected: l.selected === true || l.selected === 'True' }));
+        if (loading) loading.classList.add('hidden');
+        renderTable();
+      } catch (e) {
+        if (loading) {
+          loading.innerHTML = `<p class="text-red-400 text-sm">Error: ${(e as Error).message}</p>`;
+        }
+      }
+    }
+
+    async function loadStatus(): Promise<void> {
+      try {
+        const res = await fetch(`${API}/api/status`);
+        if (res.ok) {
+          const { enviados } = await res.json() as { enviados: number };
+          const el = document.getElementById('stat-sent');
+          if (el) el.textContent = String(enviados);
+        }
+      } catch { /* silent */ }
+    }
+
+    async function toggleSelect(ids: number[], selected: boolean): Promise<void> {
+      ids.forEach(i => { allLeads[i].selected = selected; });
+      updateStats();
+      renderTable();
+      try {
+        await fetch(`${API}/api/leads/select`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids, selected }),
+        });
+      } catch (e) {
+        toast('Error guardando selección: ' + (e as Error).message, 'error');
+      }
+    }
+
+    async function selectAll(selected: boolean): Promise<void> {
+      allLeads.forEach(l => { l.selected = selected; });
+      updateStats();
+      renderTable();
+      try {
+        await fetch(`${API}/api/leads/select-all`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selected }),
+        });
+      } catch (e) {
+        toast('Error guardando selección: ' + (e as Error).message, 'error');
+      }
+    }
+
+    const WA_ICON = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg> Enviar WhatsApp`;
+
+    async function launchWhatsapp(): Promise<void> {
+      const btn = document.getElementById('btn-whatsapp') as HTMLButtonElement | null;
+      if (!btn) return;
+      btn.disabled = true;
+      btn.textContent = 'Lanzando...';
+      try {
+        const res = await fetch(`${API}/api/whatsapp/launch`, { method: 'POST' });
+        const data = await res.json() as { detail?: string; selected?: number; pid?: number };
+        if (!res.ok) throw new Error(data.detail ?? 'Error desconocido');
+        toast(`Script lanzado — ${data.selected} mensajes en cola (PID ${data.pid})`, 'success');
+      } catch (e) {
+        toast('Error: ' + (e as Error).message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = WA_ICON;
+      }
+    }
+
+    async function checkApi(): Promise<void> {
+      const el = document.getElementById('api-status');
+      const dot = document.getElementById('api-dot');
+      if (!el) return;
+      try {
+        const res = await fetch(`${API}/api/status`);
+        if (res.ok) {
+          el.textContent = 'conectado';
+          el.className = 'text-green-400';
+          if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-green-400';
+        } else throw new Error();
+      } catch {
+        el.textContent = 'sin conexión';
+        el.className = 'text-red-400';
+        if (dot) dot.className = 'w-1.5 h-1.5 rounded-full bg-red-400';
+      }
+    }
+
+    // ── Events ───────────────────────────────────────────────────────────────────
+
+    document.getElementById('search')?.addEventListener('input', renderTable);
+    document.getElementById('btn-select-all')?.addEventListener('click', () => void selectAll(true));
+    document.getElementById('btn-deselect')?.addEventListener('click', () => void selectAll(false));
+    document.getElementById('btn-refresh')?.addEventListener('click', () => void loadLeads());
+    document.getElementById('btn-whatsapp')?.addEventListener('click', () => void launchWhatsapp());
+
+    document.getElementById('check-all')?.addEventListener('change', (e) => {
+      const cb = e.target as HTMLInputElement;
+      void toggleSelect(filteredIds, cb.checked);
+    });
+
+    // ── Init ─────────────────────────────────────────────────────────────────────
+
+    void checkApi();
+    void loadLeads();
+    void loadStatus();
+    setInterval(() => void loadStatus(), 15000);
+  </script>
 </Layout>
