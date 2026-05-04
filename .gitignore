@@ -1,0 +1,34 @@
+# Dependencias
+node_modules/
+
+# Credenciales y claves API
+.env
+.env.local
+.env*.local
+
+# WhatsApp: sesión guardada (contiene tokens de autenticación)
+.wwebjs_auth/
+.wwebjs_cache/
+
+# Logs y estado generado
+whatsapp_log.json
+usage.json
+search_state.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
