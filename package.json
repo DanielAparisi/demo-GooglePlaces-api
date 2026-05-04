@@ -21,6 +21,7 @@
     "csv-parse": "^6.2.1",
     "groq-sdk": "^1.1.2",
     "openai": "^6.35.0",
+    "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.34.7"
   }

@@ -1,5 +1,6 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
+const QRCode = require('qrcode');
 const fs = require('fs');
 const { parse } = require('csv-parse/sync');
 const Groq = require('groq-sdk');
@@ -114,9 +115,12 @@ async function main() {
         puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
     });
 
-    client.on('qr', (qr) => {
-        console.log('\n📱 Escanea este QR con tu WhatsApp (Ajustes → Dispositivos vinculados):\n');
+    client.on('qr', async (qr) => {
         qrcode.generate(qr, { small: true });
+        const qrPath = 'qr.png';
+        await QRCode.toFile(qrPath, qr, { width: 400 });
+        console.log(`\nQR guardado como imagen: ${qrPath}`);
+        console.log('Abrelo con el visor de imagenes y escanéalo desde ahi.\n');
     });
 
     client.on('ready', async () => {

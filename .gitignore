@@ -10,6 +10,9 @@ node_modules/
 .wwebjs_auth/
 .wwebjs_cache/
 
+# QR de autenticación WhatsApp
+qr.png
+
 # Logs y estado generado
 whatsapp_log.json
 usage.json
