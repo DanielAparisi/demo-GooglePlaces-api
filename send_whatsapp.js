@@ -140,11 +140,11 @@ async function main() {
                 await client.sendMessage(chatId, mensaje);
                 log.enviados.push({ nombre, telefono: telefonoRaw, chatId, mensaje, fecha: new Date().toISOString() });
                 guardarLog(log);
-                console.log(`  ✓ Enviado`);
+                console.log(`  Enviado`);
             } catch (err) {
                 log.fallidos.push({ nombre, telefono: telefonoRaw, error: err.message, fecha: new Date().toISOString() });
                 guardarLog(log);
-                console.log(`  ✗ Error: ${err.message}`);
+                console.log(`  Error: ${err.message}`);
             }
 
             if (i < pendientes.length - 1) {
@@ -153,13 +153,13 @@ async function main() {
             }
         }
 
-        console.log(`\n🎉 Completado. Enviados: ${log.enviados.length} | Fallidos: ${log.fallidos.length}`);
+        console.log(`\n Completado. Enviados: ${log.enviados.length} | Fallidos: ${log.fallidos.length}`);
         await client.destroy();
         process.exit(0);
     });
 
     client.on('auth_failure', () => {
-        console.error('❌ Fallo de autenticación. Borra la carpeta .wwebjs_auth y vuelve a intentarlo.');
+        console.error(' Fallo de autenticación. Borra la carpeta .wwebjs_auth y vuelve a intentarlo.');
         process.exit(1);
     });
 

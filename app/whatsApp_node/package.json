@@ -1,0 +1,28 @@
+{
+  "name": "demo-googleplaces-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanielAparisi/demo-GooglePlaces-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DanielAparisi/demo-GooglePlaces-api/issues"
+  },
+  "homepage": "https://github.com/DanielAparisi/demo-GooglePlaces-api#readme",
+  "dependencies": {
+    "csv-parse": "^6.2.1",
+    "groq-sdk": "^1.1.2",
+    "openai": "^6.35.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.7"
+  }
+}
