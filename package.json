@@ -1,10 +1,10 @@
 {
   "name": "google-places-lead-gen",
   "private": true,
-  "workspaces": [
-    "apps/*"
-  ],
   "scripts": {
-    "start:whatsapp": "npm run start --workspace=apps/whatsapp-node"
+    "dev": "npm run dev:backend & npm run dev:frontend & npm run dev:whatsapp & wait",
+    "dev:backend": "cd app/backend && ([ -d .venv ] || python3 -m venv .venv) && source .venv/bin/activate && pip install -q -r requirements.txt && uvicorn main:app --reload --port 8000",
+    "dev:frontend": "cd app/frontend && npm install --silent && npm run dev",
+    "dev:whatsapp": "cd app/whatsApp_node && npm install --silent && node send_whatsapp.js"
   }
 }
