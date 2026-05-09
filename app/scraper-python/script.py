@@ -6,10 +6,13 @@ import time
 import random
 from datetime import date
 
-API_KEY = '***GOOGLE_KEY_ROTADA***'
-USAGE_FILE = 'usage.json'
-STATE_FILE = 'search_state.json'
-CSV_FILE = 'Leads Google Maps.csv'
+_DIR    = os.path.dirname(os.path.abspath(__file__))
+_ROOT   = os.path.abspath(os.path.join(_DIR, '..', '..'))
+
+API_KEY    = '***GOOGLE_KEY_ROTADA***'
+USAGE_FILE = os.path.join(_DIR, 'usage.json')
+STATE_FILE = os.path.join(_DIR, 'search_state.json')
+CSV_FILE   = os.path.join(_ROOT, 'Leads Google Maps.csv')
 LIMITE_DIARIO = 10
 MAX_POR_LLAMADA = 10
 

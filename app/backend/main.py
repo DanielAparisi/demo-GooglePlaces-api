@@ -18,8 +18,10 @@ app.add_middleware(
 )
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-CSV_FILE = os.path.join(ROOT, 'Leads Google Maps.csv')
-SEND_SCRIPT = os.path.join(ROOT, 'app', 'whatsApp_node', 'send_whatsapp.js')
+CSV_FILE        = os.path.join(ROOT, 'Leads Google Maps.csv')
+SEND_SCRIPT     = os.path.join(ROOT, 'app', 'whatsApp_node', 'send_whatsapp.js')
+EMAIL_SCRIPT    = os.path.join(ROOT, 'app', 'scraper-python', 'send_emails.py')
+PYTHON_BIN      = os.path.join(ROOT, 'app', 'backend', '.venv', 'bin', 'python3')
 
 COLUMNAS_REDES = ['Facebook', 'Instagram', 'LinkedIn', 'Twitter', 'TikTok', 'YouTube']
 
@@ -89,14 +91,37 @@ def launch_whatsapp():
     return {"ok": True, "pid": proc.pid, "selected": selected_count}
 
 
+@app.post("/api/email/launch")
+def launch_email():
+    df = read_df()
+    selected_count = int((df['selected'] == 'True').sum() + (df['selected'] == True).sum())
+    if selected_count == 0:
+        raise HTTPException(status_code=400, detail="No hay leads seleccionados")
+
+    con_email = df[(df['selected'].isin(['True', 'true', '1'])) & (df['Email'] != '')].shape[0]
+    if con_email == 0:
+        raise HTTPException(status_code=400, detail="Ningún lead seleccionado tiene email")
+
+    proc = subprocess.Popen(
+        [PYTHON_BIN, EMAIL_SCRIPT, '--selected-only'],
+        cwd=ROOT,
+    )
+    return {"ok": True, "pid": proc.pid, "selected": con_email}
+
+
 @app.get("/api/status")
 def get_status():
-    log_file = os.path.join(ROOT, 'whatsapp_log.json')
-    if os.path.exists(log_file):
-        with open(log_file) as f:
-            log = json.load(f)
-        return {
-            "enviados": len(log.get('enviados', [])),
-            "fallidos": len(log.get('fallidos', [])),
-        }
-    return {"enviados": 0, "fallidos": 0}
+    wa_log   = os.path.join(ROOT, 'whatsapp_log.json')
+    mail_log = os.path.join(ROOT, 'email_log.json')
+
+    wa_enviados = 0
+    if os.path.exists(wa_log):
+        with open(wa_log) as f:
+            wa_enviados = len(json.load(f).get('enviados', []))
+
+    mail_enviados = 0
+    if os.path.exists(mail_log):
+        with open(mail_log) as f:
+            mail_enviados = len(json.load(f).get('enviados', []))
+
+    return {"enviados": wa_enviados, "emails_enviados": mail_enviados}
