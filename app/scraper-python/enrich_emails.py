@@ -1,11 +1,12 @@
+import os
 import re
 import time
 import requests
 import pandas as pd
 from urllib.parse import quote
 
-SCRAPEDO_TOKEN = 'SU_TOKEN_AQUI'
-CSV_FILE = 'Leads Google Maps.csv'
+SCRAPEDO_TOKEN = '***SCRAPEDO_TOKEN_ROTADO***'
+CSV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Leads Google Maps.csv')
 DELAY_BETWEEN_CALLS = 3
 
 EMAIL_REGEX = re.compile(r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}')
@@ -136,9 +137,9 @@ def main():
         print("Error: reemplaza SCRAPEDO_TOKEN con tu token de scrape.do")
         return
 
-    df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+    df = pd.read_csv(CSV_FILE, encoding='utf-8-sig', dtype=str).fillna('')
 
-    for col in COLUMNAS_REDES:
+    for col in ['Email'] + COLUMNAS_REDES:
         if col not in df.columns:
             df[col] = ''
 

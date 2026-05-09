@@ -27,7 +27,7 @@ COLUMNAS_REDES = ['Facebook', 'Instagram', 'LinkedIn', 'Twitter', 'TikTok', 'You
 def read_df() -> pd.DataFrame:
     if not os.path.exists(CSV_FILE):
         raise HTTPException(status_code=404, detail="CSV no encontrado")
-    df = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
+    df = pd.read_csv(CSV_FILE, encoding='utf-8-sig', dtype=str).fillna('')
     if 'selected' not in df.columns:
         df['selected'] = False
     for col in COLUMNAS_REDES:
