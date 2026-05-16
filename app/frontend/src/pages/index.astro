@@ -40,6 +40,10 @@ import Layout from '../layouts/Layout.astro';
       <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">Con email</p>
       <p class="text-2xl font-bold text-purple-400" id="stat-with-email">—</p>
     </div>
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+      <p class="text-xs text-slate-500 uppercase tracking-widest mb-1">DMs Instagram</p>
+      <p class="text-2xl font-bold text-pink-400" id="stat-ig">—</p>
+    </div>
   </div>
 
   <!-- ── Toolbar ── -->
@@ -81,10 +85,17 @@ import Layout from '../layouts/Layout.astro';
       </svg>
       Enviar Email
     </button>
+    <button id="btn-instagram" disabled
+      class="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg bg-linear-to-r from-purple-600 to-pink-500 text-white hover:from-purple-500 hover:to-pink-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+      </svg>
+      Instagram DM
+    </button>
   </div>
 
   <!-- ── Table ── -->
-  <div class="px-6 pb-16 overflow-x-auto">
+  <div class="px-6 pb-16 overflow-x-auto" id="table-wrapper">
     <div id="loading" class="flex flex-col items-center justify-center py-20 text-slate-500 gap-3">
       <svg class="w-8 h-8 animate-spin text-slate-600" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -126,6 +137,7 @@ import Layout from '../layouts/Layout.astro';
     interface Lead {
       id: number;
       selected: boolean | string;
+      email_enviado?: boolean;
       'Nombre del negocio'?: string;
       'Categoría'?: string;
       'Ubicación'?: string;
@@ -142,6 +154,8 @@ import Layout from '../layouts/Layout.astro';
 
     const API = 'http://localhost:8000';
 
+    const PAGE_SIZE = 10;
+    let currentPage = 0;
     let allLeads: Lead[] = [];
     let filteredIds: number[] = [];
     let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -193,8 +207,11 @@ import Layout from '../layouts/Layout.astro';
       const selectedEl   = document.getElementById('stat-selected');
       const phoneEl      = document.getElementById('stat-phone');
       const withEmailEl  = document.getElementById('stat-with-email');
+      const selectedWithIg   = allLeads.filter(l => l.selected && l['Instagram']).length;
+
       const btnWa        = document.getElementById('btn-whatsapp') as HTMLButtonElement | null;
       const btnEmail     = document.getElementById('btn-email') as HTMLButtonElement | null;
+      const btnIg        = document.getElementById('btn-instagram') as HTMLButtonElement | null;
 
       if (totalEl)     totalEl.textContent = String(total);
       if (selectedEl)  selectedEl.textContent = String(selected);
@@ -202,6 +219,46 @@ import Layout from '../layouts/Layout.astro';
       if (withEmailEl) withEmailEl.textContent = String(withEmail);
       if (btnWa)       btnWa.disabled = selected === 0;
       if (btnEmail)    btnEmail.disabled = selectedWithEmail === 0;
+      if (btnIg)       btnIg.disabled = selectedWithIg === 0;
+    }
+
+    function hasContact(l: Lead): boolean {
+      return !!(l['Email'] || l['Facebook'] || l['Instagram'] ||
+                l['LinkedIn'] || l['Twitter'] || l['TikTok'] || l['YouTube']);
+    }
+
+    function renderPagination(total: number): void {
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      let el = document.getElementById('pagination');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'pagination';
+        document.getElementById('table-wrapper')?.appendChild(el);
+      }
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+      const from = currentPage * PAGE_SIZE + 1;
+      const to = Math.min((currentPage + 1) * PAGE_SIZE, total);
+
+      el.className = 'flex items-center justify-between gap-4 pt-4 pb-2 text-sm text-slate-400';
+      el.innerHTML = `
+        <span>${from}–${to} de ${total} leads</span>
+        <div class="flex items-center gap-2">
+          <button id="pg-prev"
+            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            ${currentPage === 0 ? 'disabled' : ''}>← Anterior</button>
+          <span class="text-slate-500">Página ${currentPage + 1} / ${totalPages}</span>
+          <button id="pg-next"
+            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            ${currentPage >= totalPages - 1 ? 'disabled' : ''}>Siguiente →</button>
+        </div>`;
+
+      document.getElementById('pg-prev')?.addEventListener('click', () => {
+        if (currentPage > 0) { currentPage--; renderTable(); }
+      });
+      document.getElementById('pg-next')?.addEventListener('click', () => {
+        if (currentPage < totalPages - 1) { currentPage++; renderTable(); }
+      });
     }
 
     function renderTable(): void {
@@ -214,6 +271,7 @@ import Layout from '../layouts/Layout.astro';
       filteredIds = allLeads
         .map((l, i) => ({ l, i }))
         .filter(({ l }) => {
+          if (!hasContact(l)) return false;
           if (!q) return true;
           return [l['Nombre del negocio'], l['Categoría'], l['Ubicación'], l['Teléfono'], l['Email']]
             .some(v => v && String(v).toLowerCase().includes(q));
@@ -223,14 +281,19 @@ import Layout from '../layouts/Layout.astro';
       if (filteredIds.length === 0) {
         if (table) table.classList.add('hidden');
         if (empty) empty.classList.replace('hidden', 'flex');
+        renderPagination(0);
         return;
       }
 
       if (table) table.classList.remove('hidden');
       if (empty) empty.classList.replace('flex', 'hidden');
 
+      const totalPages = Math.ceil(filteredIds.length / PAGE_SIZE);
+      if (currentPage >= totalPages) currentPage = Math.max(0, totalPages - 1);
+      const pageIds = filteredIds.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
       if (tbody) {
-        tbody.innerHTML = filteredIds.map(i => {
+        tbody.innerHTML = pageIds.map(i => {
           const l = allLeads[i];
           const sel = l.selected;
           const socials = socialLinks(l);
@@ -241,7 +304,10 @@ import Layout from '../layouts/Layout.astro';
               <td class="px-3 py-3"><span class="badge">${l['Categoría'] ?? '—'}</span></td>
               <td class="px-3 py-3 text-slate-400">${ciudad(l['Ubicación'])}</td>
               <td class="px-3 py-3"><span class="badge ${l['Teléfono'] ? 'has-phone' : ''}">${l['Teléfono'] ?? '—'}</span></td>
-              <td class="px-3 py-3 text-slate-400 max-w-40 truncate" title="${l['Email'] ?? ''}">${l['Email'] ?? '—'}</td>
+              <td class="px-3 py-3 text-slate-400 max-w-40 truncate" title="${l['Email'] ?? ''}">
+                ${l['Email'] ?? '—'}
+                ${l.email_enviado ? '<span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-blue-900/60 text-blue-300 font-medium">Enviado</span>' : ''}
+              </td>
               <td class="px-3 py-3"><div class="social-links">${socials || '<span class="text-slate-700">—</span>'}</div></td>
             </tr>`;
         }).join('');
@@ -256,9 +322,11 @@ import Layout from '../layouts/Layout.astro';
 
       const checkAll = document.getElementById('check-all') as HTMLInputElement | null;
       if (checkAll) {
-        checkAll.checked = filteredIds.length > 0 && filteredIds.every(i => allLeads[i].selected);
+        const selectableIds = filteredIds.filter(i => !allLeads[i].email_enviado);
+        checkAll.checked = selectableIds.length > 0 && selectableIds.every(i => allLeads[i].selected);
       }
 
+      renderPagination(filteredIds.length);
       updateStats();
     }
 
@@ -273,7 +341,11 @@ import Layout from '../layouts/Layout.astro';
         const res = await fetch(`${API}/api/leads`);
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json() as Lead[];
-        allLeads = data.map(l => ({ ...l, selected: l.selected === true || l.selected === 'True' }));
+        allLeads = data.map(l => ({
+          ...l,
+          selected: l.selected === true || l.selected === 'True',
+          email_enviado: l.email_enviado === true,
+        }));
         if (loading) loading.classList.add('hidden');
         renderTable();
       } catch (e) {
@@ -287,9 +359,11 @@ import Layout from '../layouts/Layout.astro';
       try {
         const res = await fetch(`${API}/api/status`);
         if (res.ok) {
-          const data = await res.json() as { enviados: number; emails_enviados: number };
+          const data = await res.json() as { enviados: number; emails_enviados: number; ig_enviados: number };
           const elEmails = document.getElementById('stat-emails');
+          const elIg     = document.getElementById('stat-ig');
           if (elEmails) elEmails.textContent = String(data.emails_enviados ?? 0);
+          if (elIg)     elIg.textContent     = String(data.ig_enviados ?? 0);
         }
       } catch { /* silent */ }
     }
@@ -310,17 +384,33 @@ import Layout from '../layouts/Layout.astro';
     }
 
     async function selectAll(selected: boolean): Promise<void> {
-      allLeads.forEach(l => { l.selected = selected; });
-      updateStats();
-      renderTable();
-      try {
-        await fetch(`${API}/api/leads/select-all`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ selected }),
-        });
-      } catch (e) {
-        toast('Error guardando selección: ' + (e as Error).message, 'error');
+      if (selected) {
+        // Only select leads whose email has never been sent
+        allLeads.forEach(l => { l.selected = !l.email_enviado; });
+        updateStats();
+        renderTable();
+        try {
+          const res = await fetch(`${API}/api/leads/select-not-emailed`, { method: 'PATCH' });
+          const data = await res.json() as { selected?: number };
+          if (data.selected !== undefined) {
+            toast(`${data.selected} leads seleccionados (sin email previo)`, 'info');
+          }
+        } catch (e) {
+          toast('Error guardando selección: ' + (e as Error).message, 'error');
+        }
+      } else {
+        allLeads.forEach(l => { l.selected = false; });
+        updateStats();
+        renderTable();
+        try {
+          await fetch(`${API}/api/leads/select-all`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ selected: false }),
+          });
+        } catch (e) {
+          toast('Error guardando selección: ' + (e as Error).message, 'error');
+        }
       }
     }
 
@@ -382,16 +472,40 @@ import Layout from '../layouts/Layout.astro';
       }
     }
 
-    document.getElementById('search')?.addEventListener('input', renderTable);
+    const IG_ICON = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg> Instagram DM`;
+
+    async function launchInstagram(): Promise<void> {
+      const btn = document.getElementById('btn-instagram') as HTMLButtonElement | null;
+      if (!btn) return;
+      btn.disabled = true;
+      btn.textContent = 'Lanzando...';
+      try {
+        const res = await fetch(`${API}/api/instagram/launch`, { method: 'POST' });
+        const data = await res.json() as { detail?: string; selected?: number; pid?: number };
+        if (!res.ok) throw new Error(data.detail ?? 'Error desconocido');
+        toast(`Instagram DMs en cola: ${data.selected} mensajes (PID ${data.pid})`, 'success');
+      } catch (e) {
+        toast('Error: ' + (e as Error).message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = IG_ICON;
+      }
+    }
+
+    document.getElementById('search')?.addEventListener('input', () => { currentPage = 0; renderTable(); });
     document.getElementById('btn-select-all')?.addEventListener('click', () => void selectAll(true));
     document.getElementById('btn-deselect')?.addEventListener('click', () => void selectAll(false));
-    document.getElementById('btn-refresh')?.addEventListener('click', () => void loadLeads());
+    document.getElementById('btn-refresh')?.addEventListener('click', () => { currentPage = 0; void loadLeads(); });
     document.getElementById('btn-whatsapp')?.addEventListener('click', () => void launchWhatsapp());
     document.getElementById('btn-email')?.addEventListener('click', () => void launchEmail());
+    document.getElementById('btn-instagram')?.addEventListener('click', () => void launchInstagram());
 
     document.getElementById('check-all')?.addEventListener('change', (e) => {
       const cb = e.target as HTMLInputElement;
-      void toggleSelect(filteredIds, cb.checked);
+      const ids = cb.checked
+        ? filteredIds.filter(i => !allLeads[i].email_enviado)
+        : filteredIds;
+      void toggleSelect(ids, cb.checked);
     });
 
     // ── Init ─────────────────────────────────────────────────────────────────────

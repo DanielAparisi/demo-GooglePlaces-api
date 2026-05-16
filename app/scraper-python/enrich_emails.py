@@ -142,13 +142,10 @@ def main():
     for col in ['Email'] + COLUMNAS_REDES:
         if col not in df.columns:
             df[col] = ''
+    if 'enriched' not in df.columns:
+        df['enriched'] = ''
 
-    def fila_incompleta(row):
-        sin_email = pd.isna(row.get('Email')) or row.get('Email') == ''
-        sin_redes = all(pd.isna(row.get(c)) or row.get(c) == '' for c in COLUMNAS_REDES)
-        return sin_email or sin_redes
-
-    pendientes = [idx for idx in df.index if fila_incompleta(df.loc[idx])]
+    pendientes = [idx for idx in df.index if df.at[idx, 'enriched'] != 'True']
     print(f"Negocios a enriquecer: {len(pendientes)} de {len(df)} totales.\n")
 
     for i, idx in enumerate(pendientes):
@@ -171,6 +168,7 @@ def main():
         if not email and not redes:
             print("  → Sin datos encontrados.")
 
+        df.at[idx, 'enriched'] = 'True'
         df.to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
 
         if i < len(pendientes) - 1:

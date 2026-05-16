@@ -17,11 +17,16 @@ LIMITE_DIARIO = 10
 MAX_POR_LLAMADA = 10
 
 _TIPOS_NEGOCIO = [
-    'restaurante', 'cafetería', 'bar', 'panadería', 'peluquería',
-    'tienda de ropa', 'gimnasio', 'farmacia', 'dentista', 'fontanero',
-    'electricista', 'taller de coches', 'inmobiliaria', 'veterinario',
-    'floristería', 'zapatería', 'ferretería', 'librería', 'spa',
-    'agencia de viajes', 'supermercado', 'lavandería', 'joyería',
+    'fontanero',           # servicios locales muy tradicionales, raramente tienen web
+    'electricista',        # ídem
+    'cerrajero',           # ídem
+    'taller de coches',    # mecánicos pequeños, muy pocos tienen web
+    'carpintero',          # oficios de madera, nula presencia digital
+    'pintor de interiores',# reformas pequeñas, sin web habitual
+    'peluquería',          # salones pequeños de barrio
+    'lavandería',          # lavanderías autoservicio y tradicionales
+    'panadería artesanal', # obradores y panaderías de barrio
+    'academia de idiomas', # academias pequeñas locales
 ]
 
 _CIUDADES_ESPAÑA = [
