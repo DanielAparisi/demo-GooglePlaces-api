@@ -52,6 +52,15 @@ function formatearTelefono(telefono) {
     return '34' + limpio + '@c.us';
 }
 
+// En España los móviles empiezan por 6xx o 7xx. Los fijos (9xx, 8xx) no tienen WhatsApp.
+function esTelefonoMovil(telefono) {
+    const limpio = telefono.replace(/\s+/g, '').replace(/[^\d+]/g, '');
+    const local = limpio.startsWith('+34') ? limpio.slice(3)
+                : limpio.startsWith('34')  ? limpio.slice(2)
+                : limpio;
+    return /^[67]/.test(local);
+}
+
 function cargarLog() {
     if (fs.existsSync(LOG_FILE)) return JSON.parse(fs.readFileSync(LOG_FILE, 'utf8'));
     return { enviados: [], fallidos: [] };
@@ -87,6 +96,7 @@ async function main() {
 
     const pendientes = filas.filter(f => {
         if (!f['Teléfono'] || f['Teléfono'].trim() === '') return false;
+        if (!esTelefonoMovil(f['Teléfono'])) return false;
         if (yaEnviados.has(f['Teléfono'].trim())) return false;
         if (soloSeleccionados) {
             const sel = (f['selected'] || '').toString().toLowerCase();
@@ -95,9 +105,12 @@ async function main() {
         return true;
     });
 
+    const fijos = filas.filter(f => f['Teléfono'] && !esTelefonoMovil(f['Teléfono'])).length;
+
     if (soloSeleccionados) console.log('Modo: solo leads seleccionados desde la web');
 
     console.log(`Total en CSV: ${filas.length}`);
+    console.log(`Fijos (sin WhatsApp, omitidos): ${fijos}`);
     console.log(`Ya enviados:  ${log.enviados.length}`);
     console.log(`Pendientes:   ${pendientes.length}\n`);
 

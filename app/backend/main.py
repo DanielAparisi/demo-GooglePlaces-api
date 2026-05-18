@@ -104,7 +104,7 @@ def select_not_emailed():
 @app.post("/api/whatsapp/launch")
 def launch_whatsapp():
     df = read_df()
-    selected_count = int((df['selected'] == True).sum())
+    selected_count = int((df['selected'] == 'True').sum() + (df['selected'] == True).sum())
     if selected_count == 0:
         raise HTTPException(status_code=400, detail="No hay leads seleccionados")
 
