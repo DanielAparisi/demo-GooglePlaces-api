@@ -8,6 +8,7 @@ const Groq = require('groq-sdk');
 const CSV_FILE = 'Leads Google Maps.csv';
 const DELAY_MS = 8000;
 const LOG_FILE = 'whatsapp_log.json';
+const PORTFOLIO_URL = 'https://portfolio-techh.netlify.app/';
 const GROQ_API_KEY = '***GROQ_KEY_ROTADA***';
 
 // ─── Groq (Llama 3.3): generar mensaje personalizado ─────────────────────────
@@ -74,6 +75,12 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Todo mensaje enviado debe terminar con el enlace al porfolio/CV.
+function conPortfolio(mensaje) {
+    if (mensaje.includes(PORTFOLIO_URL)) return mensaje;
+    return `${mensaje}\n\nAquí puedes ver mi porfolio con ejemplos de mi trabajo: ${PORTFOLIO_URL}`;
+}
+
 function leerCSV() {
     const contenido = fs.readFileSync(CSV_FILE, 'utf8').replace(/^﻿/, '');
     return parse(contenido, { columns: true, skip_empty_lines: true });
@@ -119,17 +126,24 @@ async function main() {
         process.exit(0);
     }
 
-    // Pre-generar todos los mensajes con Groq antes de conectar WhatsApp
-    console.log('Generando mensajes con IA...');
+    // Usar el mensaje registrado en el CSV (columna 'Mensaje') si existe;
+    // si no, generarlo con Groq antes de conectar WhatsApp.
+    console.log('Preparando mensajes...');
     const mensajes = [];
     for (const fila of pendientes) {
-        const msg = await generarMensaje(
-            fila['Nombre del negocio'],
-            fila['Categoría'] || 'Negocio local',
-            fila['Ubicación'] || ''
-        );
-        mensajes.push(msg);
-        process.stdout.write('.');
+        const registrado = (fila['Mensaje'] || '').trim();
+        if (registrado) {
+            mensajes.push(conPortfolio(registrado));
+            process.stdout.write('•');
+        } else {
+            const msg = await generarMensaje(
+                fila['Nombre del negocio'],
+                fila['Categoría'] || 'Negocio local',
+                fila['Ubicación'] || ''
+            );
+            mensajes.push(conPortfolio(msg));
+            process.stdout.write('.');
+        }
     }
     console.log(' ✓\n');
 
