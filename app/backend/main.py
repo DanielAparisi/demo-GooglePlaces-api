@@ -5,6 +5,7 @@ import subprocess
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List
 
@@ -149,6 +150,15 @@ def launch_instagram():
         cwd=ROOT,
     )
     return {"ok": True, "pid": proc.pid, "selected": con_ig}
+
+
+@app.get("/api/whatsapp/qr")
+def get_whatsapp_qr():
+    """Sirve el último QR generado por send_whatsapp.js (se regenera cada ~30s)."""
+    qr_path = os.path.join(ROOT, 'qr.png')
+    if not os.path.exists(qr_path):
+        raise HTTPException(status_code=404, detail="Aún no hay QR: lanza el envío de WhatsApp primero")
+    return FileResponse(qr_path, media_type='image/png', headers={'Cache-Control': 'no-store'})
 
 
 @app.get("/api/status")
