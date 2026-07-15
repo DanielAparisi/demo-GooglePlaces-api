@@ -136,11 +136,18 @@ async function main() {
             mensajes.push(conPortfolio(registrado));
             process.stdout.write('•');
         } else {
-            const msg = await generarMensaje(
-                fila['Nombre del negocio'],
-                fila['Categoría'] || 'Negocio local',
-                fila['Ubicación'] || ''
-            );
+            let msg;
+            try {
+                msg = await generarMensaje(
+                    fila['Nombre del negocio'],
+                    fila['Categoría'] || 'Negocio local',
+                    fila['Ubicación'] || ''
+                );
+            } catch (err) {
+                // Si Groq falla (p. ej. API key inválida), usar plantilla de respaldo.
+                console.warn(`\n⚠ Groq falló (${err.message}). Usando plantilla para ${fila['Nombre del negocio']}.`);
+                msg = `Hola, soy Daniel, desarrollador freelance de páginas web con IA. He visto ${fila['Nombre del negocio']} en Google Maps y creo que una página web profesional os ayudaría a atraer más clientes. ¿Os interesaría ver una propuesta sin compromiso?`;
+            }
             mensajes.push(conPortfolio(msg));
             process.stdout.write('.');
         }
