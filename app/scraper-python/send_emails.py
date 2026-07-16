@@ -7,12 +7,13 @@ import pandas as pd
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from groq import Groq
+from config import requerir
 
 # ── Configuración ─────────────────────────────────────────────────────────────
 
-GMAIL_USER     = 'daniel.aparisi.lozano@gmail.com'
-GMAIL_PASSWORD = '***GMAIL_APP_PASSWORD_ROTADA***'  # Google App Password (16 caracteres)
-GROQ_API_KEY   = '***GROQ_KEY_ROTADA***'
+GMAIL_USER     = requerir('GMAIL_USER')
+GMAIL_PASSWORD = requerir('GMAIL_PASSWORD')  # Google App Password (16 caracteres)
+GROQ_API_KEY   = requerir('GROQ_API_KEY')
 
 CSV_FILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Leads Google Maps.csv')
 LOG_FILE  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'email_log.json')
@@ -92,11 +93,6 @@ def guardar_log(log):
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
-    if GMAIL_PASSWORD == 'TU_APP_PASSWORD_AQUI':
-        print('Error: configura GMAIL_PASSWORD con tu Google App Password.')
-        print('Instrucciones: myaccount.google.com → Seguridad → Contraseñas de aplicación')
-        return
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--selected-only', action='store_true')
     args = parser.parse_args()

@@ -2,18 +2,34 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const QRCode = require('qrcode');
 const fs = require('fs');
+const path = require('path');
 const { parse } = require('csv-parse/sync');
 const Groq = require('groq-sdk');
+
+// Cargar credenciales desde el .env de la raíz del proyecto (sin dependencias)
+const ENV_FILE = path.join(__dirname, '..', '..', '.env');
+if (fs.existsSync(ENV_FILE)) {
+    for (const linea of fs.readFileSync(ENV_FILE, 'utf8').split('\n')) {
+        const m = linea.match(/^\s*([\w]+)\s*=\s*(.*?)\s*$/);
+        if (m && m[2] && !linea.trim().startsWith('#') && !(m[1] in process.env)) {
+            process.env[m[1]] = m[2].replace(/^['"]|['"]$/g, '');
+        }
+    }
+}
 
 const CSV_FILE = 'Leads Google Maps.csv';
 const DELAY_MS = 8000;
 const LOG_FILE = 'whatsapp_log.json';
 const PORTFOLIO_URL = 'https://portfolio-techh.netlify.app/';
-const GROQ_API_KEY = '***GROQ_KEY_ROTADA***';
+const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 
 // ─── Groq (Llama 3.3): generar mensaje personalizado ─────────────────────────
 
-const groq = new Groq({ apiKey: GROQ_API_KEY });
+let groq = null;
+function getGroq() {
+    if (!groq) groq = new Groq({ apiKey: GROQ_API_KEY });
+    return groq;
+}
 
 async function generarMensaje(nombre, categoria, ubicacion) {
     const ciudad = ubicacion.split(',').slice(-2, -1)[0]?.trim() || ubicacion;
@@ -34,7 +50,7 @@ Requisitos del mensaje:
 - Usa emojis con moderación (máximo 2)
 - NO uses asteriscos para negritas, solo texto plano`;
 
-    const response = await groq.chat.completions.create({
+    const response = await getGroq().chat.completions.create({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.8,
@@ -89,8 +105,8 @@ function leerCSV() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-    if (!GROQ_API_KEY || GROQ_API_KEY === 'SU_GROQ_API_KEY') {
-        console.error('❌ Añade tu GROQ_API_KEY en la línea 10 del script.');
+    if (!GROQ_API_KEY) {
+        console.error('❌ Añade GROQ_API_KEY al archivo .env de la raíz del proyecto.');
         console.error('   Consíguela gratis en: console.groq.com → API Keys');
         process.exit(1);
     }

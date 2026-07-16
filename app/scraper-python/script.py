@@ -9,7 +9,9 @@ from datetime import date
 _DIR    = os.path.dirname(os.path.abspath(__file__))
 _ROOT   = os.path.abspath(os.path.join(_DIR, '..', '..'))
 
-API_KEY    = '***GOOGLE_KEY_ROTADA***'
+from config import requerir
+
+API_KEY    = requerir('GOOGLE_PLACES_API_KEY')
 USAGE_FILE = os.path.join(_DIR, 'usage.json')
 STATE_FILE = os.path.join(_DIR, 'search_state.json')
 CSV_FILE   = os.path.join(_ROOT, 'Leads Google Maps.csv')

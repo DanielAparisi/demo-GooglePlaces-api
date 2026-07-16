@@ -5,7 +5,9 @@ import requests
 import pandas as pd
 from urllib.parse import quote
 
-SCRAPEDO_TOKEN = '***SCRAPEDO_TOKEN_ROTADO***'
+from config import requerir
+
+SCRAPEDO_TOKEN = requerir('SCRAPEDO_TOKEN')
 CSV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Leads Google Maps.csv')
 DELAY_BETWEEN_CALLS = 3
 
@@ -133,10 +135,6 @@ COLUMNAS_REDES = ['Facebook', 'Instagram', 'LinkedIn', 'Twitter', 'TikTok', 'You
 
 
 def main():
-    if not SCRAPEDO_TOKEN or SCRAPEDO_TOKEN == 'SU_TOKEN_AQUI':
-        print("Error: reemplaza SCRAPEDO_TOKEN con tu token de scrape.do")
-        return
-
     df = pd.read_csv(CSV_FILE, encoding='utf-8-sig', dtype=str).fillna('')
 
     for col in ['Email'] + COLUMNAS_REDES:

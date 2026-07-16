@@ -35,7 +35,7 @@ fi
 source .venv/bin/activate
 pip install -q -r requirements.txt
 
-uvicorn main:app --reload --port 8000 > "$LOGS/backend.log" 2>&1 &
+uvicorn main:app --reload --host 127.0.0.1 --port 8000 > "$LOGS/backend.log" 2>&1 &
 PID_BACKEND=$!
 log "Backend PID=$PID_BACKEND  →  http://localhost:8000  (log: .logs/backend.log)"
 

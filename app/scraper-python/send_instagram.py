@@ -6,12 +6,13 @@ import argparse
 import pandas as pd
 from groq import Groq
 from instagrapi import Client
+from config import requerir
 
 # ── Configuración ──────────────────────────────────────────────────────────────
 
-INSTAGRAM_USER     = os.environ.get('IG_USER', 'TU_USUARIO_INSTAGRAM')
-INSTAGRAM_PASSWORD = os.environ.get('IG_PASS', 'TU_CONTRASEÑA_INSTAGRAM')
-GROQ_API_KEY       = '***GROQ_KEY_ROTADA***'
+INSTAGRAM_USER     = os.environ.get('IG_USER', '')
+INSTAGRAM_PASSWORD = os.environ.get('IG_PASS', '')
+GROQ_API_KEY       = requerir('GROQ_API_KEY')
 
 CSV_FILE     = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Leads Google Maps.csv')
 LOG_FILE     = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'instagram_log.json')
@@ -81,10 +82,8 @@ def guardar_log(log):
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    if INSTAGRAM_USER == 'TU_USUARIO_INSTAGRAM':
-        print('Error: configura IG_USER e IG_PASS como variables de entorno.')
-        print('  export IG_USER="tu_usuario"')
-        print('  export IG_PASS="tu_contraseña"')
+    if not INSTAGRAM_USER or not INSTAGRAM_PASSWORD:
+        print('Error: configura IG_USER e IG_PASS en el archivo .env de la raíz.')
         return
 
     parser = argparse.ArgumentParser()

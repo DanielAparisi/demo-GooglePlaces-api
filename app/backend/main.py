@@ -3,20 +3,34 @@ import os
 import subprocess
 
 import pandas as pd
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List
 
 app = FastAPI()
 
+# Solo el frontend local puede llamar a la API: estos endpoints lanzan envíos
+# reales de WhatsApp/email, así que nunca deben quedar abiertos a cualquier origen.
+ALLOWED_ORIGINS = ["http://localhost:4321", "http://127.0.0.1:4321"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# CORS no impide que otra web dispare un POST (solo le impide leer la respuesta),
+# así que además rechazamos cualquier petición de navegador con un Origin ajeno.
+@app.middleware("http")
+async def bloquear_origenes_desconocidos(request: Request, call_next):
+    origin = request.headers.get("origin")
+    if origin and origin not in ALLOWED_ORIGINS:
+        return JSONResponse(status_code=403, content={"detail": "Origen no permitido"})
+    return await call_next(request)
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 CSV_FILE        = os.path.join(ROOT, 'Leads Google Maps.csv')

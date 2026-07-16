@@ -10,13 +10,22 @@ node_modules/
 .wwebjs_auth/
 .wwebjs_cache/
 
+# Instagram: sesión guardada (contiene tokens de autenticación)
+.ig_session.json
+
 # QR de autenticación WhatsApp
 qr.png
 
 # Logs y estado generado
 whatsapp_log.json
+email_log.json
+instagram_log.json
 usage.json
 search_state.json
+.logs/
+
+# Datos personales de leads (RGPD): nunca subir a git
+*.csv
 
 # Python
 __pycache__/
