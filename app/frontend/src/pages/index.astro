@@ -221,6 +221,27 @@ import Layout from '../layouts/Layout.astro';
 
     // ── Utilidades ──────────────────────────────────────────────────────────────
 
+    // Los datos de los leads vienen de fuentes externas (Google Places, scraping),
+    // así que todo lo que se interpola en innerHTML debe pasar por aquí.
+    function escapeHtml(valor: unknown): string {
+      return String(valor ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Solo enlaces http(s): bloquea javascript:, data:, etc.
+    function safeUrl(valor: unknown): string | null {
+      try {
+        const url = new URL(String(valor ?? ''));
+        return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+      } catch {
+        return null;
+      }
+    }
+
     function toast(msg: string, type = 'info'): void {
       const el = document.getElementById('toast');
       if (!el) return;
@@ -246,9 +267,10 @@ import Layout from '../layouts/Layout.astro';
         ['YouTube', 'yt', 'Y'],
       ];
       return map
-        .filter(([key]) => lead[key])
-        .map(([key, cls, label]) =>
-          `<a href="${String(lead[key])}" target="_blank" class="s-${cls}" title="${String(key)}">${label}</a>`
+        .map(([key, cls, label]) => [safeUrl(lead[key]), key, cls, label] as const)
+        .filter(([url]) => url)
+        .map(([url, key, cls, label]) =>
+          `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="s-${cls}" title="${escapeHtml(key)}">${label}</a>`
         )
         .join('');
     }
@@ -359,16 +381,16 @@ import Layout from '../layouts/Layout.astro';
           return `
             <tr class="${sel ? 'selected-row' : 'hover:bg-slate-900/60'} transition-colors cursor-default" data-idx="${i}">
               <td class="px-3 py-3"><input type="checkbox" class="row-check w-4 h-4 rounded accent-green-500 cursor-pointer" data-idx="${i}" ${sel ? 'checked' : ''} /></td>
-              <td class="px-3 py-3 font-medium text-slate-200 max-w-48 truncate" title="${l['Nombre del negocio'] ?? ''}">${l['Nombre del negocio'] ?? '—'}</td>
-              <td class="px-3 py-3"><span class="badge">${l['Categoría'] ?? '—'}</span></td>
-              <td class="px-3 py-3 text-slate-400">${ciudad(l['Ubicación'])}</td>
-              <td class="px-3 py-3"><span class="badge ${l['Teléfono'] ? 'has-phone' : ''}">${l['Teléfono'] ?? '—'}</span></td>
-              <td class="px-3 py-3 text-slate-400 max-w-40 truncate" title="${l['Email'] ?? ''}">
-                ${l['Email'] ?? '—'}
+              <td class="px-3 py-3 font-medium text-slate-200 max-w-48 truncate" title="${escapeHtml(l['Nombre del negocio'])}">${escapeHtml(l['Nombre del negocio'] ?? '—')}</td>
+              <td class="px-3 py-3"><span class="badge">${escapeHtml(l['Categoría'] ?? '—')}</span></td>
+              <td class="px-3 py-3 text-slate-400">${escapeHtml(ciudad(l['Ubicación']))}</td>
+              <td class="px-3 py-3"><span class="badge ${l['Teléfono'] ? 'has-phone' : ''}">${escapeHtml(l['Teléfono'] ?? '—')}</span></td>
+              <td class="px-3 py-3 text-slate-400 max-w-40 truncate" title="${escapeHtml(l['Email'])}">
+                ${escapeHtml(l['Email'] ?? '—')}
                 ${l.email_enviado ? '<span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-blue-900/60 text-blue-300 font-medium">Enviado</span>' : ''}
               </td>
               <td class="px-3 py-3"><div class="social-links">${socials || '<span class="text-slate-700">—</span>'}</div></td>
-              <td class="px-3 py-3 text-slate-400 max-w-56 truncate" title="${String(l['Mensaje'] ?? '').replace(/"/g, '&quot;')}">${l['Mensaje'] ? String(l['Mensaje']) : '—'}</td>
+              <td class="px-3 py-3 text-slate-400 max-w-56 truncate" title="${escapeHtml(l['Mensaje'])}">${l['Mensaje'] ? escapeHtml(l['Mensaje']) : '—'}</td>
             </tr>`;
         }).join('');
 
@@ -410,7 +432,7 @@ import Layout from '../layouts/Layout.astro';
         renderTable();
       } catch (e) {
         if (loading) {
-          loading.innerHTML = `<p class="text-red-400 text-sm">Error: ${(e as Error).message}</p>`;
+          loading.innerHTML = `<p class="text-red-400 text-sm">Error: ${escapeHtml((e as Error).message)}</p>`;
         }
       }
     }
