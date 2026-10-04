@@ -1,5 +1,6 @@
 """Carga de credenciales desde el .env de la raíz del proyecto (sin dependencias)."""
 import os
+import re
 
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 ENV_FILE = os.path.join(_ROOT, '.env')
@@ -28,3 +29,11 @@ def requerir(nombre):
             f"(copia .env.example) o expórtala como variable de entorno."
         )
     return valor
+
+
+def limpiar_dato(valor, maximo=100):
+    """Deja un dato externo (p. ej. el nombre de un negocio de Google Maps) listo para
+    meterlo en un prompt: una sola línea, sin comillas y con longitud acotada, para
+    que no pueda colar instrucciones al modelo."""
+    valor = re.sub(r'[\x00-\x1f\x7f"`]', ' ', str(valor or ''))
+    return re.sub(r'\s+', ' ', valor).strip()[:maximo]

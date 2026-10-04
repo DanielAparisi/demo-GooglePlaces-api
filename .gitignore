@@ -44,3 +44,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Maquetas generadas para leads (llevan datos de negocios)
+maquetas/

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+# Todo lo que generen los servicios (logs, CSV de leads, sesiones, QR) solo lo lee tu usuario.
+umask 077
+
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 LOGS="$ROOT/.logs"
 mkdir -p "$LOGS"
@@ -17,7 +20,7 @@ die()  { echo -e "${RED}[error]${NC} $*" >&2; exit 1; }
 cleanup() {
   echo ""
   log "Deteniendo todos los servicios..."
-  kill "$PID_BACKEND" "$PID_FRONTEND" "$PID_WHATSAPP" 2>/dev/null || true
+  kill "$PID_BACKEND" "$PID_FRONTEND" 2>/dev/null || true
   wait 2>/dev/null
   log "Entorno detenido."
 }
@@ -55,17 +58,14 @@ PID_FRONTEND=$!
 log "Frontend PID=$PID_FRONTEND  →  http://localhost:4321  (log: .logs/frontend.log)"
 
 # ── WhatsApp Node ─────────────────────────────────────────────────────────────
-log "Levantando WhatsApp Node..."
+# No se arranca aquí: send_whatsapp.js envía mensajes reales, así que solo se lanza
+# desde el botón del panel (que usa --selected-only). Solo instalamos dependencias.
 cd "$ROOT/app/whatsApp_node"
 
 if [ ! -d "node_modules" ]; then
   warn "node_modules ausente — ejecutando npm install..."
   npm install --silent
 fi
-
-node index.js > "$LOGS/whatsapp.log" 2>&1 &
-PID_WHATSAPP=$!
-log "WhatsApp  PID=$PID_WHATSAPP             (log: .logs/whatsapp.log)"
 
 # ── Esperar ───────────────────────────────────────────────────────────────────
 echo ""

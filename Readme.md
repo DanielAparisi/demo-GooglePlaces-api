@@ -106,15 +106,16 @@ Con 50 clientes en plan Starter son **1.450€/mes recurrentes y automáticos si
 ./start.sh
 ```
 
-Levanta los tres servicios en paralelo y redirige sus logs a `.logs/`:
+Levanta el backend y el frontend en paralelo y redirige sus logs a `.logs/`:
 
 | Servicio        | URL / acceso                              | Log                  |
 | --------------- | ----------------------------------------- | -------------------- |
 | Backend FastAPI | [localhost:8000](http://localhost:8000)   | `.logs/backend.log`  |
 | Frontend Astro  | [localhost:4321](http://localhost:4321)   | `.logs/frontend.log` |
-| WhatsApp Node   | escanea QR en terminal                    | `.logs/whatsapp.log` |
 
 Pulsa `Ctrl+C` para detener todos los servicios a la vez.
+
+WhatsApp no se arranca con el entorno porque envía mensajes reales: se lanza desde el botón del panel, que solo escribe a los leads seleccionados. El QR para vincular la cuenta aparece en el panel.
 
 ### Si prefieres arrancar cada servicio por separado
 
@@ -135,12 +136,11 @@ npm install
 npm run dev
 ```
 
-**WhatsApp Node:**
+**WhatsApp Node** (solo instalar; los envíos se lanzan desde el panel):
 
 ```bash
 cd app/whatsApp_node
 npm install
-node index.js
 ```
 
 **Scraper de emails (se ejecuta aparte, no forma parte del servidor):**
@@ -234,9 +234,13 @@ python enrich_emails.py
 
 ### 3. Enviar mensajes de WhatsApp
 
+Desde el panel (botón de WhatsApp) o a mano, desde la raíz del proyecto:
+
 ```bash
-node send_whatsapp.js
+node app/whatsApp_node/send_whatsapp.js --selected-only
 ```
+
+> ⚠ Sin `--selected-only` escribe a **todos** los móviles pendientes del CSV.
 
 - Lee los negocios pendientes del CSV (los que aún no han recibido mensaje)
 - Genera un mensaje personalizado por negocio usando **Llama 3.3** via Groq

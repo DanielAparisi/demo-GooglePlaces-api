@@ -1,6 +1,7 @@
-fastapi
-uvicorn[standard]
-pandas
-pydantic
-groq
-instagrapi
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+pandas==3.0.2
+pydantic==2.13.3
+requests==2.34.2
+groq==1.2.0
+instagrapi==2.6.11

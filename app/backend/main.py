@@ -1,19 +1,27 @@
 import json
 import os
+import re
 import subprocess
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List
+
+import contacto
 
 app = FastAPI()
 
 # Solo el frontend local puede llamar a la API: estos endpoints lanzan envíos
 # reales de WhatsApp/email, así que nunca deben quedar abiertos a cualquier origen.
 ALLOWED_ORIGINS = ["http://localhost:4321", "http://127.0.0.1:4321"]
+
+# Rechaza cualquier Host que no sea local: evita ataques de DNS rebinding, en los
+# que una web ajena resuelve su dominio a 127.0.0.1 y lee la API como "mismo origen".
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,11 +33,18 @@ app.add_middleware(
 
 # CORS no impide que otra web dispare un POST (solo le impide leer la respuesta),
 # así que además rechazamos cualquier petición de navegador con un Origin ajeno.
+# Las que cambian estado (lanzan envíos o modifican el CSV) deben traer además un
+# Origin permitido: una petición sin Origin no viene del frontend.
+METODOS_SEGUROS = {"GET", "HEAD", "OPTIONS"}
+
+
 @app.middleware("http")
 async def bloquear_origenes_desconocidos(request: Request, call_next):
     origin = request.headers.get("origin")
     if origin and origin not in ALLOWED_ORIGINS:
         return JSONResponse(status_code=403, content={"detail": "Origen no permitido"})
+    if request.method not in METODOS_SEGUROS and not origin:
+        return JSONResponse(status_code=403, content={"detail": "Falta la cabecera Origin"})
     return await call_next(request)
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -41,6 +56,19 @@ PYTHON_BIN        = os.path.join(ROOT, 'app', 'backend', '.venv', 'bin', 'python
 
 COLUMNAS_REDES = ['Facebook', 'Instagram', 'LinkedIn', 'Twitter', 'TikTok', 'YouTube']
 
+# Un proceso de envío por canal: lanzar dos a la vez manda mensajes duplicados
+# (ambos leen el mismo log de enviados) y corrompe el log al escribirlo.
+procesos_envio: dict[str, subprocess.Popen] = {}
+
+
+def lanzar_envio(canal: str, comando: list[str]) -> subprocess.Popen:
+    proc = procesos_envio.get(canal)
+    if proc and proc.poll() is None:
+        raise HTTPException(status_code=409, detail=f"Ya hay un envío de {canal} en curso (PID {proc.pid})")
+    proc = subprocess.Popen(comando, cwd=ROOT)
+    procesos_envio[canal] = proc
+    return proc
+
 
 def read_df() -> pd.DataFrame:
     if not os.path.exists(CSV_FILE):
@@ -48,7 +76,7 @@ def read_df() -> pd.DataFrame:
     df = pd.read_csv(CSV_FILE, encoding='utf-8-sig', dtype=str).fillna('')
     if 'selected' not in df.columns:
         df['selected'] = False
-    for col in COLUMNAS_REDES:
+    for col in COLUMNAS_REDES + ['Guion', 'Maqueta']:
         if col not in df.columns:
             df[col] = ''
     return df
@@ -123,10 +151,7 @@ def launch_whatsapp():
     if selected_count == 0:
         raise HTTPException(status_code=400, detail="No hay leads seleccionados")
 
-    proc = subprocess.Popen(
-        ['node', SEND_SCRIPT, '--selected-only'],
-        cwd=ROOT,
-    )
+    proc = lanzar_envio('whatsapp', ['node', SEND_SCRIPT, '--selected-only'])
     return {"ok": True, "pid": proc.pid, "selected": selected_count}
 
 
@@ -141,10 +166,7 @@ def launch_email():
     if con_email == 0:
         raise HTTPException(status_code=400, detail="Ningún lead seleccionado tiene email")
 
-    proc = subprocess.Popen(
-        [PYTHON_BIN, EMAIL_SCRIPT, '--selected-only'],
-        cwd=ROOT,
-    )
+    proc = lanzar_envio('email', [PYTHON_BIN, EMAIL_SCRIPT, '--selected-only'])
     return {"ok": True, "pid": proc.pid, "selected": con_email}
 
 
@@ -159,10 +181,7 @@ def launch_instagram():
     if con_ig == 0:
         raise HTTPException(status_code=400, detail="Ningún lead seleccionado tiene Instagram")
 
-    proc = subprocess.Popen(
-        [PYTHON_BIN, INSTAGRAM_SCRIPT, '--selected-only'],
-        cwd=ROOT,
-    )
+    proc = lanzar_envio('instagram', [PYTHON_BIN, INSTAGRAM_SCRIPT, '--selected-only'])
     return {"ok": True, "pid": proc.pid, "selected": con_ig}
 
 
@@ -197,3 +216,48 @@ def get_status():
             ig_enviados = len(json.load(f).get('enviados', []))
 
     return {"enviados": wa_enviados, "emails_enviados": mail_enviados, "ig_enviados": ig_enviados}
+
+
+# ── Preparar contacto: guion de llamada y maqueta de web ──────────────────────
+
+def lead_por_id(df: pd.DataFrame, lead_id: int) -> dict:
+    if lead_id not in df.index:
+        raise HTTPException(status_code=404, detail="Lead no encontrado")
+    return df.loc[lead_id].to_dict()
+
+
+@app.post("/api/leads/{lead_id}/guion")
+def crear_guion(lead_id: int):
+    df = read_df()
+    lead = lead_por_id(df, lead_id)
+    try:
+        guion = contacto.generar_guion(lead)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"No se pudo generar el guion: {e}")
+    df.at[lead_id, 'Guion'] = guion
+    save_df(df)
+    return {"guion": guion, "sector": contacto.sector_de(lead)}
+
+
+@app.post("/api/leads/{lead_id}/maqueta")
+def crear_maqueta(lead_id: int):
+    df = read_df()
+    lead = lead_por_id(df, lead_id)
+    try:
+        archivo = contacto.generar_maqueta(lead, lead_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    df.at[lead_id, 'Maqueta'] = archivo
+    save_df(df)
+    return {"maqueta": archivo, "url": f"/maquetas/{archivo}"}
+
+
+@app.get("/maquetas/{archivo}")
+def ver_maqueta(archivo: str):
+    # Solo nombres generados por contacto._slug: nada de rutas ni ../
+    if not re.fullmatch(r'[a-z0-9-]+\.html', archivo):
+        raise HTTPException(status_code=404, detail="Maqueta no encontrada")
+    ruta = os.path.join(contacto.MAQUETAS_DIR, archivo)
+    if not os.path.exists(ruta):
+        raise HTTPException(status_code=404, detail="Maqueta no encontrada")
+    return FileResponse(ruta, media_type='text/html')
