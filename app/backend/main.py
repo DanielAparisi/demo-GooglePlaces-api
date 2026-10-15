@@ -2,6 +2,7 @@ import json
 import os
 import re
 import subprocess
+from datetime import date
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
@@ -76,9 +77,12 @@ def read_df() -> pd.DataFrame:
     df = pd.read_csv(CSV_FILE, encoding='utf-8-sig', dtype=str).fillna('')
     if 'selected' not in df.columns:
         df['selected'] = False
-    for col in COLUMNAS_REDES + ['Guion', 'Maqueta']:
+    for col in COLUMNAS_REDES + ['Guion', 'Maqueta', 'Tipo teléfono', 'Llamada', 'Fecha llamada']:
         if col not in df.columns:
             df[col] = ''
+    # Leads antiguos (anteriores a la etiqueta) o editados a mano: se calcula al vuelo
+    sin_tipo = df['Tipo teléfono'] == ''
+    df.loc[sin_tipo, 'Tipo teléfono'] = df.loc[sin_tipo, 'Teléfono'].apply(contacto.tipo_telefono)
     return df
 
 
@@ -99,6 +103,7 @@ def get_leads():
     df = read_df()
     ya_enviados = get_emailed_addresses()
     df['email_enviado'] = df['Email'].apply(lambda e: bool(e and e.strip() in ya_enviados))
+    df['sector'] = df.apply(lambda r: contacto.sector_de(r.to_dict()) or '', axis=1)
     df = df.where(pd.notnull(df), None)
     records = df.reset_index().rename(columns={'index': 'id'}).to_dict(orient='records')
     return records[::-1]
@@ -261,3 +266,24 @@ def ver_maqueta(archivo: str):
     if not os.path.exists(ruta):
         raise HTTPException(status_code=404, detail="Maqueta no encontrada")
     return FileResponse(ruta, media_type='text/html')
+
+
+# ── Llamadas: leads con teléfono fijo (sin WhatsApp) ───────────────────────────
+
+ESTADOS_LLAMADA = {'', 'No contesta', 'Interesado', 'No interesado'}
+
+
+class LlamadaRequest(BaseModel):
+    estado: str
+
+
+@app.patch("/api/leads/{lead_id}/llamada")
+def actualizar_llamada(lead_id: int, body: LlamadaRequest):
+    if body.estado not in ESTADOS_LLAMADA:
+        raise HTTPException(status_code=400, detail="Estado de llamada no válido")
+    df = read_df()
+    lead_por_id(df, lead_id)
+    df.at[lead_id, 'Llamada'] = body.estado
+    df.at[lead_id, 'Fecha llamada'] = date.today().isoformat() if body.estado else ''
+    save_df(df)
+    return {"ok": True}

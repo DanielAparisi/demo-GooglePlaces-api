@@ -16,7 +16,7 @@ from groq import Groq
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.insert(0, os.path.join(ROOT, 'app', 'scraper-python'))
-from config import limpiar_dato, requerir  # noqa: E402
+from config import limpiar_dato, requerir, sector_de, tipo_telefono  # noqa: E402,F401
 
 MAQUETAS_DIR = os.path.join(ROOT, 'maquetas')
 MODELO = 'llama-3.3-70b-versatile'
@@ -33,14 +33,6 @@ def groq():
 
 # ── Sector ────────────────────────────────────────────────────────────────────
 
-# Palabras clave buscadas en categoría + nombre. Google suele devolver "Negocio"
-# como categoría, así que el nombre ("Reformas X", "Taller Y") es la pista principal.
-_SECTORES = {
-    'reformas':     ['reforma', 'contratista', 'construcc', 'albañil', 'obras'],
-    'taller':       ['taller', 'mecánic', 'mecanic', 'automoci', 'chapa'],
-    'fisioterapia': ['fisio', 'osteopat', 'rehabilitaci', 'fisioterap'],
-}
-
 GANCHOS = {
     'reformas': 'Antes de pedir presupuesto, la gente quiere ver fotos de obras terminadas; '
                 'sin web, esos clientes se van a la competencia que sí las enseña.',
@@ -49,14 +41,6 @@ GANCHOS = {
     'fisioterapia': 'Muchos pacientes quieren reservar cita online a cualquier hora, '
                     'cuando no pueden llamar; sin web con reserva, esa cita se pierde.',
 }
-
-
-def sector_de(lead: dict) -> str | None:
-    texto = f"{lead.get('Categoría', '')} {lead.get('Nombre del negocio', '')}".lower()
-    for sector, claves in _SECTORES.items():
-        if any(c in texto for c in claves):
-            return sector
-    return None
 
 
 def nombre_comercial(nombre: str) -> str:

@@ -1,11 +1,13 @@
+import argparse
 import os
 import re
 import time
+import unicodedata
 import requests
 import pandas as pd
 from urllib.parse import quote
 
-from config import requerir
+from config import requerir, sector_de
 
 SCRAPEDO_TOKEN = requerir('SCRAPEDO_TOKEN')
 CSV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'Leads Google Maps.csv')
@@ -89,6 +91,29 @@ def extraer_redes(html):
     return resultados
 
 
+# Palabras del nombre que no sirven para identificar al negocio
+_PALABRAS_GENERICAS = {
+    'taller', 'talleres', 'mecanico', 'mecanica', 'reformas', 'reforma', 'clinica', 'centro',
+    'fisioterapia', 'fisio', 'servicios', 'empresa', 'grupo', 'hermanos', 'rehabilitaciones',
+    'autoservicio', 'lavanderia', 'restaurante', 'para', 'sport', 'auto', 'autos',
+}
+
+
+def _normalizar(texto):
+    texto = unicodedata.normalize('NFKD', texto).encode('ascii', 'ignore').decode().lower()
+    return re.sub(r'[^a-z0-9]', '', texto)
+
+
+def es_del_negocio(nombre, texto):
+    """El email/red solo se acepta si contiene alguna palabra distintiva del nombre del negocio.
+    Sin esto se cuelan emails de cualquier web que salga en los resultados de Google."""
+    nombre = nombre.split(' - ')[0]
+    palabras = {_normalizar(p) for p in re.split(r'[\s.,&/\-]+', nombre)}
+    distintivas = {p for p in palabras if len(p) >= 4 and p not in _PALABRAS_GENERICAS}
+    objetivo = _normalizar(texto)
+    return any(p in objetivo for p in distintivas)
+
+
 def buscar_info(nombre, ubicacion):
     ciudad = ubicacion.split(',')[-2].strip() if ',' in ubicacion else ubicacion
     email = None
@@ -109,10 +134,10 @@ def buscar_info(nombre, ubicacion):
         url = f"https://www.google.es/search?q={quote(query)}&hl=es&num=10"
         html = scrape_url(url)
         if not email:
-            emails = extraer_emails(html)
+            emails = [e for e in extraer_emails(html) if es_del_negocio(nombre, e)]
             if emails:
                 email = emails[0]
-        nuevas = extraer_redes(html)
+        nuevas = {k: v for k, v in extraer_redes(html).items() if es_del_negocio(nombre, v)}
         redes.update({k: v for k, v in nuevas.items() if k not in redes})
         time.sleep(1)
 
@@ -121,10 +146,10 @@ def buscar_info(nombre, ubicacion):
             break
         html = scrape_url(url)
         if not email:
-            emails = extraer_emails(html)
+            emails = [e for e in extraer_emails(html) if es_del_negocio(nombre, e)]
             if emails:
                 email = emails[0]
-        nuevas = extraer_redes(html)
+        nuevas = {k: v for k, v in extraer_redes(html).items() if es_del_negocio(nombre, v)}
         redes.update({k: v for k, v in nuevas.items() if k not in redes})
         time.sleep(1)
 
@@ -135,6 +160,11 @@ COLUMNAS_REDES = ['Facebook', 'Instagram', 'LinkedIn', 'Twitter', 'TikTok', 'You
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--solo-sectores', action='store_true',
+                        help='solo talleres, fisioterapia y reformas (ahorra créditos de scrape.do)')
+    args = parser.parse_args()
+
     df = pd.read_csv(CSV_FILE, encoding='utf-8-sig', dtype=str).fillna('')
 
     for col in ['Email'] + COLUMNAS_REDES:
@@ -144,6 +174,8 @@ def main():
         df['enriched'] = ''
 
     pendientes = [idx for idx in df.index if df.at[idx, 'enriched'] != 'True']
+    if args.solo_sectores:
+        pendientes = [idx for idx in pendientes if sector_de(df.loc[idx].to_dict())]
     print(f"Negocios a enriquecer: {len(pendientes)} de {len(df)} totales.\n")
 
     for i, idx in enumerate(pendientes):

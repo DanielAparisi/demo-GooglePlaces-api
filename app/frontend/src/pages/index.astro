@@ -121,6 +121,23 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </div>
 
+  <!-- ── Por llamar: fijos (sin WhatsApp) de los sectores objetivo ── -->
+  <section class="px-6 pb-5">
+    <div class="bg-slate-900 border border-amber-500/30 rounded-xl p-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-1">
+        <h2 class="flex items-center gap-2 text-sm font-bold text-slate-100">
+          📞 Por llamar <span class="text-slate-500 font-medium">· teléfonos fijos</span>
+          <span id="llamadas-pendientes" class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-300">—</span>
+        </h2>
+        <label class="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+          <input type="checkbox" id="llamadas-ver-todas" class="accent-amber-500" /> Mostrar ya llamados
+        </label>
+      </div>
+      <p class="text-xs text-slate-500 mb-3">Talleres, fisios y reformas sin WhatsApp: hay que llamarlos. Mejor en horario comercial (10–13 h y 17–19 h).</p>
+      <div id="llamadas-lista" class="divide-y divide-slate-800/70"></div>
+    </div>
+  </section>
+
   <!-- ── Buscador móvil ── -->
   <div class="sm:hidden px-6 pb-3">
     <div class="relative">
@@ -301,6 +318,94 @@ import Layout from '../layouts/Layout.astro';
 
     // ── Render ──────────────────────────────────────────────────────────────────
 
+    function telTag(l: Lead): string {
+      if (l['Tipo teléfono'] === 'Fijo') return '<span class="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-amber-500/15 text-amber-300 font-semibold">☎️ Fijo</span>';
+      if (l['Tipo teléfono'] === 'Móvil') return '<span class="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-green-500/15 text-green-300 font-semibold">📱 WhatsApp</span>';
+      return '';
+    }
+
+    const SECTOR_LABEL: Record<string, string> = { reformas: 'Reformas', taller: 'Taller', fisioterapia: 'Fisioterapia' };
+    const ESTADO_CLASE: Record<string, string> = {
+      'No contesta': 'bg-slate-700 text-slate-300',
+      'Interesado': 'bg-green-500/15 text-green-300',
+      'No interesado': 'bg-red-500/15 text-red-300',
+    };
+
+    function llamadaPendiente(l: Lead): boolean {
+      return !l['Llamada'] || l['Llamada'] === 'No contesta';
+    }
+
+    function renderLlamadas(): void {
+      const lista = document.getElementById('llamadas-lista');
+      const contador = document.getElementById('llamadas-pendientes');
+      const verTodas = (document.getElementById('llamadas-ver-todas') as HTMLInputElement | null)?.checked;
+      if (!lista) return;
+
+      const fijos = allLeads
+        .map((l, i) => ({ l, i }))
+        .filter(({ l }) => l['Tipo teléfono'] === 'Fijo' && l['sector']);
+      const pendientes = fijos.filter(({ l }) => llamadaPendiente(l));
+      if (contador) contador.textContent = `${pendientes.length} pendiente${pendientes.length === 1 ? '' : 's'}`;
+
+      const visibles = (verTodas ? fijos : pendientes)
+        .sort((a, b) => Number(llamadaPendiente(b.l)) - Number(llamadaPendiente(a.l)));
+      if (visibles.length === 0) {
+        lista.innerHTML = `<p class="py-3 text-sm text-slate-500">${fijos.length ? '¡Todo llamado! 🎉' : 'Aún no hay fijos de tus sectores.'}</p>`;
+        return;
+      }
+
+      lista.innerHTML = visibles.map(({ l, i }) => {
+        const tel = String(l['Teléfono'] ?? '');
+        const estado = String(l['Llamada'] ?? '');
+        const btn = (valor: string, texto: string) =>
+          `<button class="llamada-btn px-2 py-1 text-xs rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors" data-idx="${i}" data-estado="${escapeHtml(valor)}">${texto}</button>`;
+        return `
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2 py-2.5 ${llamadaPendiente(l) ? '' : 'opacity-60'}">
+            <div class="min-w-48 flex-1">
+              <p class="text-sm font-medium text-slate-200">${escapeHtml(l['Nombre del negocio'])}</p>
+              <p class="text-xs text-slate-500">${escapeHtml(SECTOR_LABEL[String(l['sector'])] ?? '')} · ${escapeHtml(ciudad(l['Ubicación']))}
+                ${estado ? `· <span class="px-1.5 py-0.5 rounded ${ESTADO_CLASE[estado] ?? ''}">${escapeHtml(estado)}</span> <span class="text-slate-600">${escapeHtml(l['Fecha llamada'])}</span>` : ''}</p>
+            </div>
+            <a href="tel:${escapeHtml(tel.replace(/[^\d+]/g, ''))}" class="px-3 py-1.5 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-500 transition-colors">📞 ${escapeHtml(tel)}</a>
+            <div class="flex flex-wrap gap-1.5">
+              <button class="prep-btn px-2 py-1 text-xs rounded-md bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 transition-colors" data-idx="${i}">Guion</button>
+              ${btn('No contesta', 'No contesta')}${btn('Interesado', '👍 Interesado')}${btn('No interesado', '👎 No interesado')}
+              ${estado ? btn('', 'Deshacer') : ''}
+            </div>
+          </div>`;
+      }).join('');
+
+      lista.querySelectorAll<HTMLButtonElement>('.prep-btn').forEach(b => {
+        b.addEventListener('click', () => openPrepModal(parseInt(b.dataset['idx'] ?? '', 10)));
+      });
+      lista.querySelectorAll<HTMLButtonElement>('.llamada-btn').forEach(b => {
+        b.addEventListener('click', () => void marcarLlamada(parseInt(b.dataset['idx'] ?? '', 10), b.dataset['estado'] ?? ''));
+      });
+    }
+
+    async function marcarLlamada(idx: number, estado: string): Promise<void> {
+      const lead = allLeads[idx];
+      try {
+        const res = await fetch(`${API}/api/leads/${lead.id}/llamada`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estado }),
+        });
+        if (!res.ok) throw new Error((await res.json()).detail ?? 'Error');
+        lead['Llamada'] = estado;
+        lead['Fecha llamada'] = estado ? new Date().toISOString().slice(0, 10) : '';
+        renderLlamadas();
+      } catch (e) {
+        toast('Error guardando la llamada: ' + (e as Error).message, 'error');
+      }
+    }
+
+    // Recordatorio al abrir el panel
+    function recordarLlamadas(): void {
+      const n = allLeads.filter(l => l['Tipo teléfono'] === 'Fijo' && l['sector'] && llamadaPendiente(l)).length;
+      if (n > 0) toast(`📞 Recuerda: tienes ${n} negocio${n === 1 ? '' : 's'} por llamar`, 'info');
+    }
+
     function updateStats(): void {
       const total = allLeads.length;
       const selected = allLeads.filter(l => l.selected).length;
@@ -408,7 +513,10 @@ import Layout from '../layouts/Layout.astro';
               <td class="px-3 py-3 font-medium text-slate-200 max-w-48 truncate" title="${escapeHtml(l['Nombre del negocio'])}">${escapeHtml(l['Nombre del negocio'] ?? '—')}</td>
               <td class="px-3 py-3"><span class="badge">${escapeHtml(l['Categoría'] ?? '—')}</span></td>
               <td class="px-3 py-3 text-slate-400">${escapeHtml(ciudad(l['Ubicación']))}</td>
-              <td class="px-3 py-3"><span class="badge ${l['Teléfono'] ? 'has-phone' : ''}">${escapeHtml(l['Teléfono'] ?? '—')}</span></td>
+              <td class="px-3 py-3 whitespace-nowrap">
+                <span class="badge ${l['Teléfono'] ? 'has-phone' : ''}">${escapeHtml(l['Teléfono'] ?? '—')}</span>
+                ${telTag(l)}
+              </td>
               <td class="px-3 py-3 text-slate-400 max-w-40 truncate" title="${escapeHtml(l['Email'])}">
                 ${escapeHtml(l['Email'] ?? '—')}
                 ${l.email_enviado ? '<span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-blue-900/60 text-blue-300 font-medium">Enviado</span>' : ''}
@@ -466,6 +574,8 @@ import Layout from '../layouts/Layout.astro';
         }));
         if (loading) loading.classList.add('hidden');
         renderTable();
+        renderLlamadas();
+        recordarLlamadas();
       } catch (e) {
         if (loading) {
           loading.innerHTML = `<p class="text-red-400 text-sm">Error: ${escapeHtml((e as Error).message)}</p>`;
@@ -730,6 +840,7 @@ import Layout from '../layouts/Layout.astro';
     document.getElementById('prep-btn-guion')?.addEventListener('click', () => void prepGenerar('guion'));
     document.getElementById('prep-btn-maqueta')?.addEventListener('click', () => void prepGenerar('maqueta'));
     document.getElementById('prep-close')?.addEventListener('click', closePrepModal);
+    document.getElementById('llamadas-ver-todas')?.addEventListener('change', renderLlamadas);
     document.getElementById('prep-modal')?.addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closePrepModal();
     });

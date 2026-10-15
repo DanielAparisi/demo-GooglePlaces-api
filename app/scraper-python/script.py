@@ -10,7 +10,7 @@ from datetime import date
 _DIR    = os.path.dirname(os.path.abspath(__file__))
 _ROOT   = os.path.abspath(os.path.join(_DIR, '..', '..'))
 
-from config import requerir
+from config import requerir, tipo_telefono
 
 API_KEY    = requerir('GOOGLE_PLACES_API_KEY')
 USAGE_FILE = os.path.join(_DIR, 'usage.json')
@@ -159,11 +159,12 @@ for place_id in lote:
         'Categoría': categoria,
         'Ubicación': detalles.get('formatted_address', ''),
         'Teléfono': detalles.get('formatted_phone_number', ''),
+        'Tipo teléfono': tipo_telefono(detalles.get('formatted_phone_number', '')),
     })
 
 # --- Guardar acumulando en CSV ---
 
-columnas = ['Nombre del negocio', 'Email', 'Categoría', 'Ubicación', 'Teléfono']
+columnas = ['Nombre del negocio', 'Email', 'Categoría', 'Ubicación', 'Teléfono', 'Tipo teléfono']
 df_nuevo = pd.DataFrame(resultados, columns=columnas)
 
 if os.path.exists(CSV_FILE):
@@ -183,3 +184,7 @@ guardar_estado(estado)
 
 print(f"{len(resultados)} negocios sin web encontrados, {len(df_total) - antes} nuevos (el resto ya estaban).")
 print(f"Total acumulado en '{CSV_FILE}': {len(df_total)} negocios.")
+
+fijos = [r['Nombre del negocio'] for r in resultados if r['Tipo teléfono'] == 'Fijo']
+if fijos:
+    print(f"📞 {len(fijos)} con teléfono fijo (sin WhatsApp): están en 'Por llamar' del panel → {', '.join(fijos)}")

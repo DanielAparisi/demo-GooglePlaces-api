@@ -55,6 +55,24 @@ Requisitos:
 
 # ── Email ──────────────────────────────────────────────────────────────────────
 
+def email_plantilla(nombre):
+    nombre = limpiar_dato(nombre).split(' - ')[0].strip()
+    asunto = f'Una web para {nombre}'
+    cuerpo = (
+        f"Hola,\n\n"
+        f"Soy Daniel, desarrollador web freelance. He visto {nombre} en Google Maps y me he dado cuenta "
+        f"de que no tenéis página web. Hoy, antes de llamar, la mayoría de clientes busca en Google "
+        f"y compara: una web sencilla con vuestros servicios y teléfono os ayudaría a que os elijan a vosotros.\n\n"
+        f"Hago webs modernas a precio asequible y la primera consulta es gratuita y sin compromiso. "
+        f"¿Os interesaría que os enseñe cómo podría quedar la vuestra?\n\n"
+        f"Aquí puedes ver ejemplos de mi trabajo: https://portfolio-techh.netlify.app/\n\n"
+        f"Un saludo,\n"
+        f"Daniel Aparisi, Consultor de Presencia Digital\n\n"
+        f"Si no quieres recibir más correos, responde \"baja\" y no volveré a escribirte."
+    )
+    return asunto, cuerpo
+
+
 def parsear_asunto_y_cuerpo(texto):
     lineas = texto.strip().splitlines()
     asunto = 'Mejora tu presencia digital — consulta gratuita'
@@ -125,12 +143,17 @@ def main():
     print('Generando emails con IA (Groq)...')
     emails_generados = []
     for row in pendientes:
-        texto = generar_email(
-            row['Nombre del negocio'],
-            row.get('Categoría', 'Negocio local'),
-            row.get('Ubicación', ''),
-        )
-        asunto, cuerpo = parsear_asunto_y_cuerpo(texto)
+        try:
+            texto = generar_email(
+                row['Nombre del negocio'],
+                row.get('Categoría', 'Negocio local'),
+                row.get('Ubicación', ''),
+            )
+            asunto, cuerpo = parsear_asunto_y_cuerpo(texto)
+        except Exception as e:
+            # Si Groq falla (p. ej. API key inválida), usar plantilla de respaldo.
+            print(f"\n⚠ Groq falló ({e}). Usando plantilla para {row['Nombre del negocio']}.")
+            asunto, cuerpo = email_plantilla(row['Nombre del negocio'])
         emails_generados.append((asunto, cuerpo))
         print('.', end='', flush=True)
     print(' ✓\n')

@@ -47,3 +47,6 @@ Thumbs.db
 
 # Maquetas generadas para leads (llevan datos de negocios)
 maquetas/
+
+# Lista de contactos exportada (datos de negocios)
+contactos.txt
