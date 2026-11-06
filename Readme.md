@@ -139,13 +139,20 @@ Estructura del backend (`app/backend/`):
 | `routers/`, `schemas/` | Endpoints HTTP y modelos de entrada (Pydantic) |
 | `tests/`          | Tests con datos sintéticos en un directorio temporal (nunca tocan el CSV real) |
 
-Tests:
+Tests (ninguno toca los datos reales):
 
 ```bash
-cd app/backend
-pip install -r requirements-dev.txt
-python -m pytest
+# Backend y scripts de Python (usan el mismo .venv del backend)
+cd app/backend && pip install -r requirements-dev.txt && python -m pytest
+cd ../scraper-python && ../backend/.venv/bin/python -m pytest
+
+# Envío de WhatsApp (runner nativo de Node)
+cd ../whatsApp_node && npm test
 ```
+
+Los scripts de envío aceptan `--dry-run`: redactan y muestran los mensajes sin enviar nada.
+Quien pida la baja se añade a `bajas.txt` en la raíz (un email, usuario de Instagram o teléfono
+por línea) y ningún canal vuelve a escribirle.
 
 **Frontend (Astro):**
 

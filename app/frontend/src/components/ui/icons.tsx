@@ -64,3 +64,51 @@ export const EmptyIcon = ({ className = 'w-10 h-10 text-slate-700' }: IconProps)
     <path d="M9 12h6m-3-3v6M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0z" />
   </svg>
 );
+
+export const PhoneIcon = ({ className = 'w-4 h-4' }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+    <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.95.68l1.5 4.5a1 1 0 01-.5 1.21l-2.26 1.13a11.04 11.04 0 005.52 5.52l1.13-2.26a1 1 0 011.21-.5l4.5 1.5a1 1 0 01.68.95V19a2 2 0 01-2 2h-1C9.72 21 3 14.28 3 6V5z" />
+  </svg>
+);
+
+export const MobileIcon = ({ className = 'w-4 h-4' }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+    <path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+  </svg>
+);
+
+export const CheckIcon = ({ className = 'w-4 h-4' }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+    <path d="M5 13l4 4L19 7" />
+  </svg>
+);
+
+export const XIcon = ({ className = 'w-4 h-4' }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+    <path d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
+
+export const ChevronRightIcon = ({ className = 'w-4 h-4' }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+    <path d="M9 5l7 7-7 7" />
+  </svg>
+);
+
+export const ChevronLeftIcon = ({ className = 'w-4 h-4' }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+    <path d="M15 19l-7-7 7-7" />
+  </svg>
+);
+
+export const ExternalIcon = ({ className = 'w-3.5 h-3.5' }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+    <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+  </svg>
+);
+
+export const SparklesIcon = ({ className = 'w-4 h-4' }: IconProps) => (
+  <svg className={className} viewBox="0 0 24 24" {...stroke} aria-hidden="true">
+    <path d="M5 3v4M3 5h4M6 17v4m-2-2h4M13 3l2.29 6.86L22 12l-6.71 2.14L13 21l-2.29-6.86L4 12l6.71-2.14L13 3z" />
+  </svg>
+);

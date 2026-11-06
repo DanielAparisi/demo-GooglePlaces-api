@@ -1,64 +1,41 @@
 import { memo } from 'react';
-import { ciudad } from '../../lib/format';
 import type { Lead } from '../../types/lead';
-import { SocialLinks } from './SocialLinks';
+import { ChevronRightIcon } from '../ui/icons';
+import { ContactChannels, LeadTitle, PhoneCell, StatusBadge } from './LeadBits';
 
 interface LeadRowProps {
   lead: Lead;
   onToggle: (id: number, selected: boolean) => void;
-  onPrepare: (id: number) => void;
+  onOpen: (id: number) => void;
 }
 
-function TelTag({ tipo }: { tipo: Lead['Tipo teléfono'] }) {
-  if (tipo === 'Fijo') {
-    return <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-amber-500/15 text-amber-300 font-semibold">☎️ Fijo</span>;
-  }
-  if (tipo === 'Móvil') {
-    return <span className="ml-1 px-1.5 py-0.5 text-[10px] rounded bg-green-500/15 text-green-300 font-semibold">📱 WhatsApp</span>;
-  }
-  return null;
-}
-
-export const LeadRow = memo(function LeadRow({ lead, onToggle, onPrepare }: LeadRowProps) {
-  const nombre = lead['Nombre del negocio'];
-  const email = lead.Email;
-  const mensaje = lead.Mensaje;
-
+export const LeadRow = memo(function LeadRow({ lead, onToggle, onOpen }: LeadRowProps) {
   return (
-    <tr className={`${lead.selected ? 'selected-row' : 'hover:bg-slate-900/60'} transition-colors cursor-default`}>
-      <td className="px-3 py-3">
+    <tr
+      onClick={() => onOpen(lead.id)}
+      className={`group cursor-pointer transition-colors ${lead.selected ? 'selected-row' : 'hover:bg-slate-800/40'}`}
+    >
+      <td className="w-10 py-3 pl-4 pr-2" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           checked={lead.selected}
           onChange={(e) => onToggle(lead.id, e.target.checked)}
-          aria-label={`Seleccionar ${nombre ?? 'lead'}`}
-          className="w-4 h-4 rounded accent-green-500 cursor-pointer"
+          aria-label={`Seleccionar ${lead['Nombre del negocio'] ?? 'lead'}`}
+          className="h-4 w-4 cursor-pointer rounded accent-brand-500"
         />
       </td>
-      <td className="px-3 py-3 font-medium text-slate-200 max-w-48 truncate" title={nombre ?? ''}>
-        {nombre ?? '—'}
-      </td>
-      <td className="px-3 py-3"><span className="badge">{lead['Categoría'] ?? '—'}</span></td>
-      <td className="px-3 py-3 text-slate-400">{ciudad(lead['Ubicación'])}</td>
-      <td className="px-3 py-3 whitespace-nowrap">
-        <span className={`badge ${lead['Teléfono'] ? 'has-phone' : ''}`}>{lead['Teléfono'] ?? '—'}</span>
-        <TelTag tipo={lead['Tipo teléfono']} />
-      </td>
-      <td className="px-3 py-3 text-slate-400 max-w-40 truncate" title={email ?? ''}>
-        {email ?? '—'}
-        {lead.email_enviado && (
-          <span className="ml-1 px-1.5 py-0.5 text-xs rounded bg-blue-900/60 text-blue-300 font-medium">Enviado</span>
-        )}
-      </td>
-      <td className="px-3 py-3"><SocialLinks lead={lead} /></td>
-      <td className="px-3 py-3 text-slate-400 max-w-56 truncate" title={mensaje ?? ''}>{mensaje || '—'}</td>
-      <td className="px-3 py-3 whitespace-nowrap">
+      <td className="w-[38%] max-w-0 py-3 pr-4"><LeadTitle lead={lead} /></td>
+      <td className="whitespace-nowrap py-3 pr-4"><PhoneCell lead={lead} /></td>
+      <td className="py-3 pr-4"><ContactChannels lead={lead} /></td>
+      <td className="whitespace-nowrap py-3 pr-4"><StatusBadge lead={lead} /></td>
+      <td className="w-10 py-3 pr-4 text-right">
         <button
           type="button"
-          onClick={() => onPrepare(lead.id)}
-          className="px-2.5 py-1 text-xs font-semibold rounded-md bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors"
+          onClick={(e) => { e.stopPropagation(); onOpen(lead.id); }}
+          aria-label={`Abrir ${lead['Nombre del negocio'] ?? 'lead'}`}
+          className="rounded-md p-1 text-slate-500 transition-colors group-hover:text-slate-200 focus-visible:outline-2 focus-visible:outline-brand-500"
         >
-          {lead.Guion || lead.Maqueta ? 'Ver contacto' : 'Preparar'}
+          <ChevronRightIcon />
         </button>
       </td>
     </tr>

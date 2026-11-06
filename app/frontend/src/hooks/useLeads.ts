@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api';
-import { esPendienteDeLlamar, normalizeLead } from '../lib/leads';
+import { normalizeLead } from '../lib/leads';
 import type { GeneracionTipo, Lead, LlamadaEstado, Notify } from '../types/lead';
 
 const errorMsg = (e: unknown) => (e instanceof Error ? e.message : 'Error desconocido');
@@ -21,18 +21,13 @@ export function useLeads(notify: Notify) {
     setLoading(true);
     setError(null);
     try {
-      const next = (await api.getLeads()).map(normalizeLead);
-      setLeads(next);
-      const pendientes = next.filter(esPendienteDeLlamar).length;
-      if (pendientes > 0) {
-        notify(`📞 Recuerda: tienes ${pendientes} negocio${pendientes === 1 ? '' : 's'} por llamar`);
-      }
+      setLeads((await api.getLeads()).map(normalizeLead));
     } catch (e) {
       setError(errorMsg(e));
     } finally {
       setLoading(false);
     }
-  }, [notify]);
+  }, []);
 
   useEffect(() => {
     void reload();

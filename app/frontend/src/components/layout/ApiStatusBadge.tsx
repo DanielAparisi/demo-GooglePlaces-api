@@ -1,14 +1,16 @@
 export function ApiStatusBadge({ connected }: { connected: boolean | null }) {
-  const dot =
-    connected === null ? 'bg-slate-600 animate-pulse' : connected ? 'bg-green-400' : 'bg-red-400';
-  const text =
-    connected === null ? 'text-slate-400' : connected ? 'text-green-400' : 'text-red-400';
-  const label = connected === null ? '...' : connected ? 'conectado' : 'sin conexión';
+  const [dot, label] =
+    connected === null
+      ? ['bg-slate-500 animate-pulse', 'Conectando…']
+      : connected
+        ? ['bg-emerald-400', 'API conectada']
+        : ['bg-red-400', 'API sin conexión'];
 
   return (
-    <div className="flex items-center gap-1.5 text-xs text-slate-500 border-l border-slate-700 pl-4">
-      <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
-      <span className={text}>{label}</span>
-    </div>
+    <span className="flex items-center gap-2 text-xs text-slate-400" role="status">
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+      <span className="hidden md:inline">{label}</span>
+      <span className="sr-only md:hidden">{label}</span>
+    </span>
   );
 }

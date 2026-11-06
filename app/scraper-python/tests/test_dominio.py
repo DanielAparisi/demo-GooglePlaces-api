@@ -1,21 +1,31 @@
+import json
+from pathlib import Path
+
 import pytest
 
-from comun.dominio import ciudad_de, nombre_comercial
+from comun.dominio import ciudad_de, limpiar_dato, nombre_comercial, tipo_telefono
 
 
-@pytest.mark.parametrize('ubicacion, ciudad', [
-    ('C. Mayor, 1, 30201 Cartagena, Murcia, Spain', 'Cartagena'),
-    ('C. Delicias, 5, Arganzuela, 28005 Madrid, Spain', 'Madrid'),       # con barrio
-    ('Carrer Major, 2, 08901 L\'Hospitalet de Llobregat, Barcelona, Spain', "L'Hospitalet de Llobregat"),
-    ('Calle Gran Vía, 10, 48001 Bilbao, Bizkaia, Spain', 'Bilbao'),       # no la provincia
-    ('C. Alcalá, 1, 28014 Madrid, Spain', 'Madrid'),                       # 4 partes
-    ('Madrid, Spain', 'Madrid'),                                           # sin código postal
-    ('Sevilla', 'Sevilla'),
-    ('', ''),
-    (None, ''),
-])
+CASOS = json.loads((Path(__file__).parent / 'casos_dominio.json').read_text(encoding='utf-8'))
+
+
+@pytest.mark.parametrize('ubicacion, ciudad', CASOS['ciudad'])
 def test_ciudad_de(ubicacion, ciudad):
     assert ciudad_de(ubicacion) == ciudad
+
+
+def test_ciudad_de_none():
+    assert ciudad_de(None) == ''
+
+
+@pytest.mark.parametrize('telefono, movil', CASOS['movil'])
+def test_tipo_telefono_coincide_con_node(telefono, movil):
+    assert (tipo_telefono(telefono) == 'Móvil') is movil
+
+
+@pytest.mark.parametrize('sucio, limpio', CASOS['limpiar_dato'])
+def test_limpiar_dato_coincide_con_node(sucio, limpio):
+    assert limpiar_dato(sucio) == limpio
 
 
 def test_nombre_comercial():

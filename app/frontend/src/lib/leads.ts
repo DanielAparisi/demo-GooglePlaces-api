@@ -1,12 +1,13 @@
 import type { Lead, LlamadaEstado, RawLead, RedSocial, Sector } from '../types/lead';
+import type { Tono } from './ui';
 
-export const REDES: { key: RedSocial; clase: string; etiqueta: string }[] = [
-  { key: 'Facebook', clase: 's-fb', etiqueta: 'F' },
-  { key: 'Instagram', clase: 's-ig', etiqueta: 'I' },
-  { key: 'LinkedIn', clase: 's-li', etiqueta: 'in' },
-  { key: 'Twitter', clase: 's-tw', etiqueta: 'X' },
-  { key: 'TikTok', clase: 's-tt', etiqueta: 'T' },
-  { key: 'YouTube', clase: 's-yt', etiqueta: 'Y' },
+export const REDES: { key: RedSocial; etiqueta: string }[] = [
+  { key: 'Facebook', etiqueta: 'f' },
+  { key: 'Instagram', etiqueta: 'ig' },
+  { key: 'LinkedIn', etiqueta: 'in' },
+  { key: 'Twitter', etiqueta: 'x' },
+  { key: 'TikTok', etiqueta: 'tt' },
+  { key: 'YouTube', etiqueta: 'yt' },
 ];
 
 export const SECTOR_LABEL: Record<Sector, string> = {
@@ -15,16 +16,10 @@ export const SECTOR_LABEL: Record<Sector, string> = {
   fisioterapia: 'Fisioterapia',
 };
 
-export const ESTADO_CLASE: Record<string, string> = {
-  'No contesta': 'bg-slate-700 text-slate-300',
-  Interesado: 'bg-green-500/15 text-green-300',
-  'No interesado': 'bg-red-500/15 text-red-300',
-};
-
 export const ESTADOS_LLAMADA: { valor: LlamadaEstado; texto: string }[] = [
   { valor: 'No contesta', texto: 'No contesta' },
-  { valor: 'Interesado', texto: '👍 Interesado' },
-  { valor: 'No interesado', texto: '👎 No interesado' },
+  { valor: 'Interesado', texto: 'Interesado' },
+  { valor: 'No interesado', texto: 'Descartado' },
 ];
 
 export function normalizeLead(raw: RawLead): Lead {
@@ -33,13 +28,6 @@ export function normalizeLead(raw: RawLead): Lead {
     selected: raw.selected === true || raw.selected === 'True',
     email_enviado: raw.email_enviado === true,
   };
-}
-
-export function hasContact(l: Lead): boolean {
-  return !!(
-    l['Teléfono'] || l.Email || l.Facebook || l.Instagram ||
-    l.LinkedIn || l.Twitter || l.TikTok || l.YouTube
-  );
 }
 
 export function matchesQuery(l: Lead, query: string): boolean {
@@ -56,32 +44,59 @@ export const esFijoObjetivo = (l: Lead): boolean => l['Tipo teléfono'] === 'Fij
 
 export const esPendienteDeLlamar = (l: Lead): boolean => esFijoObjetivo(l) && llamadaPendiente(l);
 
+export const esMovil = (l: Lead): boolean => l['Tipo teléfono'] === 'Móvil';
+
+// ── Filtros de la vista ───────────────────────────────────────────────────────
+
+export type Filtro = 'todos' | 'whatsapp' | 'llamar' | 'email' | 'interesados';
+
+export const FILTROS: { id: Filtro; label: string; incluye: (l: Lead) => boolean }[] = [
+  { id: 'todos', label: 'Todos', incluye: () => true },
+  { id: 'whatsapp', label: 'WhatsApp', incluye: esMovil },
+  { id: 'llamar', label: 'Por llamar', incluye: esPendienteDeLlamar },
+  { id: 'email', label: 'Con email', incluye: (l) => !!l.Email },
+  { id: 'interesados', label: 'Interesados', incluye: (l) => l.Llamada === 'Interesado' },
+];
+
+// ── Estado comercial de un lead ───────────────────────────────────────────────
+
+export function estadoLead(l: Lead): { texto: string; tono: Tono } {
+  if (l.Llamada === 'Interesado') return { texto: 'Interesado', tono: 'success' };
+  if (l.Llamada === 'No interesado') return { texto: 'Descartado', tono: 'danger' };
+  if (l.Llamada === 'No contesta') return { texto: 'No contesta', tono: 'warning' };
+  if (l.email_enviado) return { texto: 'Email enviado', tono: 'info' };
+  if (esFijoObjetivo(l)) return { texto: 'Por llamar', tono: 'warning' };
+  return { texto: 'Nuevo', tono: 'neutral' };
+}
+
+// ── Contadores ────────────────────────────────────────────────────────────────
+
 export interface LeadCounts {
   total: number;
   selected: number;
-  withPhone: number;
-  withEmail: number;
+  withMobile: number;
+  porLlamar: number;
+  interesados: number;
+  selectedWithMobile: number;
   selectedWithEmail: number;
   selectedWithInstagram: number;
 }
 
 export function countLeads(leads: Lead[]): LeadCounts {
-  const counts: LeadCounts = {
-    total: leads.length,
-    selected: 0,
-    withPhone: 0,
-    withEmail: 0,
-    selectedWithEmail: 0,
-    selectedWithInstagram: 0,
+  const c: LeadCounts = {
+    total: leads.length, selected: 0, withMobile: 0, porLlamar: 0, interesados: 0,
+    selectedWithMobile: 0, selectedWithEmail: 0, selectedWithInstagram: 0,
   };
   for (const l of leads) {
-    if (l['Teléfono']) counts.withPhone++;
-    if (l.Email) counts.withEmail++;
+    if (esMovil(l)) c.withMobile++;
+    if (esPendienteDeLlamar(l)) c.porLlamar++;
+    if (l.Llamada === 'Interesado') c.interesados++;
     if (l.selected) {
-      counts.selected++;
-      if (l.Email) counts.selectedWithEmail++;
-      if (l.Instagram) counts.selectedWithInstagram++;
+      c.selected++;
+      if (esMovil(l)) c.selectedWithMobile++;
+      if (l.Email) c.selectedWithEmail++;
+      if (l.Instagram) c.selectedWithInstagram++;
     }
   }
-  return counts;
+  return c;
 }

@@ -1,0 +1,26 @@
+{
+  "_comentario": "Casos compartidos por los tests de Python (comun/dominio.py) y de Node (whatsApp_node/lib/dominio.js). Si cambias una implementación, ambas suites deben seguir pasando.",
+  "ciudad": [
+    ["C. Mayor, 1, 30201 Cartagena, Murcia, Spain", "Cartagena"],
+    ["C. Delicias, 5, Arganzuela, 28005 Madrid, Spain", "Madrid"],
+    ["Carrer Major, 2, 08901 L'Hospitalet de Llobregat, Barcelona, Spain", "L'Hospitalet de Llobregat"],
+    ["Calle Gran Vía, 10, 48001 Bilbao, Bizkaia, Spain", "Bilbao"],
+    ["C. Alcalá, 1, 28014 Madrid, Spain", "Madrid"],
+    ["C. Cuatro, 4, Villaverde, España", "Villaverde"],
+    ["Madrid, Spain", "Madrid"],
+    ["Sevilla", "Sevilla"],
+    ["", ""]
+  ],
+  "movil": [
+    ["612 345 678", true],
+    ["+34 712 345 678", true],
+    ["34612345678", true],
+    ["968 123 456", false],
+    ["+34 868 000 000", false],
+    ["", false]
+  ],
+  "limpiar_dato": [
+    ["Bar \"Pepe\"\nIgnora lo anterior `ya`", "Bar Pepe Ignora lo anterior ya"],
+    ["  muchos    espacios  ", "muchos espacios"]
+  ]
+}
