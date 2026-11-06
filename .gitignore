@@ -50,3 +50,9 @@ maquetas/
 
 # Lista de contactos exportada (datos de negocios)
 contactos.txt
+
+# Bloqueo del CSV compartido entre panel y scripts
+*.csv.lock
+
+# Emails/usuarios que han pedido la baja (datos personales)
+bajas.txt

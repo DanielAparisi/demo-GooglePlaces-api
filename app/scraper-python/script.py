@@ -1,26 +1,35 @@
-import requests
-import pandas as pd
+"""Busca negocios sin web en Google Places y los añade al CSV de leads.
+
+    python script.py          → búsqueda nueva (cuenta para el límite diario) y revisa todos sus resultados
+    python script.py --cola   → solo revisa los negocios que quedaron en cola (no cuenta para el límite)
+
+Si la API falla a mitad, se guarda lo encontrado hasta ese momento y el resto queda
+en cola para `--cola`.
+"""
+import argparse
 import json
-import os
-import time
 import random
 import sys
+import time
 from datetime import date
 
-_DIR    = os.path.dirname(os.path.abspath(__file__))
-_ROOT   = os.path.abspath(os.path.join(_DIR, '..', '..'))
+import requests
 
-from config import requerir, tipo_telefono
+from comun import leads_csv
+from comun.dominio import tipo_telefono
+from comun.ficheros import guardar_json
+from comun import rutas
+from config import requerir
 
-API_KEY    = requerir('GOOGLE_PLACES_API_KEY')
-USAGE_FILE = os.path.join(_DIR, 'usage.json')
-STATE_FILE = os.path.join(_DIR, 'search_state.json')
-CSV_FILE   = os.path.join(_ROOT, 'Leads Google Maps.csv')
 LIMITE_DIARIO = 10
+URL_TEXTSEARCH = 'https://maps.googleapis.com/maps/api/place/textsearch/json'
+URL_DETALLES = 'https://maps.googleapis.com/maps/api/place/details/json'
+CAMPOS_DETALLE = 'name,formatted_address,rating,user_ratings_total,website,formatted_phone_number'
+COLUMNAS = ['Nombre del negocio', 'Email', 'Categoría', 'Ubicación', 'Teléfono', 'Tipo teléfono']
 
 # Búsqueda en Google Maps → categoría con la que se guarda el lead. Google suele
 # devolver tipos genéricos ("establishment"), así que el sector buscado es más fiable.
-_TIPOS_NEGOCIO = {
+TIPOS_NEGOCIO = {
     'empresa de reformas': 'Reformas',         # ticket muy alto, muchos autónomos sin web
     'taller mecánico':     'Taller mecánico',  # clientes recurrentes y mucha búsqueda local
     'fisioterapia':        'Fisioterapia',     # la reserva online es un argumento de venta claro
@@ -28,13 +37,13 @@ _TIPOS_NEGOCIO = {
 
 # Peso de cada sector al elegir la búsqueda: talleres y fisios dan más negocios sin web
 # (hoy: 5 y 3 leads en 2 búsquedas cada uno; reformas, 1 en 5), así que salen el doble.
-_PESOS = {
+PESOS = {
     'empresa de reformas': 1,
     'taller mecánico':     2,
     'fisioterapia':        2,
 }
 
-_CIUDADES_ESPAÑA = [
+CIUDADES = [
     'Madrid', 'Barcelona', 'Valencia', 'Sevilla', 'Zaragoza',
     'Málaga', 'Murcia', 'Palma', 'Bilbao', 'Alicante',
     'Córdoba', 'Valladolid', 'Vigo', 'Gijón', 'Granada',
@@ -44,147 +53,154 @@ _CIUDADES_ESPAÑA = [
 ]
 
 
-# --- Control de límite diario ---
+class PlacesError(Exception):
+    """La API de Places ha rechazado la petición (clave, cuota, petición inválida...)."""
 
-def cargar_uso():
-    if os.path.exists(USAGE_FILE):
-        with open(USAGE_FILE, 'r') as f:
-            return json.load(f)
-    return {'fecha': '', 'contador': 0}
 
-def guardar_uso(uso):
-    with open(USAGE_FILE, 'w') as f:
-        json.dump(uso, f)
+# ── Límite diario y estado ────────────────────────────────────────────────────
 
-def verificar_limite():
-    uso = cargar_uso()
-    hoy = str(date.today())
+def _leer_json(ruta, por_defecto):
+    return json.loads(ruta.read_text()) if ruta.exists() else por_defecto
+
+
+def consumir_busqueda_diaria(ruta=None, hoy=None):
+    """Cuenta una búsqueda. Devuelve False si ya se alcanzó el límite del día."""
+    ruta = ruta or rutas.USAGE_FILE
+    hoy = str(hoy or date.today())
+    uso = _leer_json(ruta, {'fecha': '', 'contador': 0})
     if uso['fecha'] != hoy:
         uso = {'fecha': hoy, 'contador': 0}
     if uso['contador'] >= LIMITE_DIARIO:
         print(f"Límite diario de {LIMITE_DIARIO} búsquedas alcanzado. Vuelve mañana.")
-        return None
+        return False
     uso['contador'] += 1
-    guardar_uso(uso)
+    guardar_json(ruta, uso)
     print(f"Búsqueda {uso['contador']}/{LIMITE_DIARIO} del día.")
-    return uso
+    return True
 
-# --- Estado: cola de negocios por revisar y búsquedas ya hechas ---
 
-def cargar_estado():
-    estado = {}
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, 'r') as f:
-            estado = json.load(f)
+def cargar_estado(ruta=None):
+    ruta = ruta or rutas.SEARCH_STATE_FILE
+    estado = _leer_json(ruta, {})
     estado.setdefault('place_ids_pendientes', [])
     estado.setdefault('tipo', None)
     estado.setdefault('hechas', [])
     return estado
 
-def guardar_estado(estado):
-    with open(STATE_FILE, 'w') as f:
-        json.dump(estado, f)
 
-def elegir_busqueda(estado):
-    """Sector (según _PESOS) + ciudad al azar que no se haya buscado ya; si se agotan, vuelve a empezar."""
-    combinaciones = [(t, c) for t in _TIPOS_NEGOCIO for c in _CIUDADES_ESPAÑA]
+def elegir_busqueda(estado, rng=random):
+    """Sector (según PESOS) + ciudad al azar que no se haya buscado ya; si se agotan, vuelve a empezar."""
+    combinaciones = [(t, c) for t in TIPOS_NEGOCIO for c in CIUDADES]
     libres = [tc for tc in combinaciones if f'{tc[0]} en {tc[1]}' not in estado['hechas']]
     if not libres:
         estado['hechas'] = []
         libres = combinaciones
-    return random.choices(libres, weights=[_PESOS[t] for t, _ in libres])[0]
+    return rng.choices(libres, weights=[PESOS[t] for t, _ in libres])[0]
 
-# --- API de Google Places ---
 
-def buscar_pagina(query=None, page_token=None):
-    if page_token:
-        # Google requiere ~2s de espera antes de usar el token de siguiente página
-        time.sleep(2)
-        params = {'pagetoken': page_token, 'key': API_KEY}
-    else:
-        params = {'query': query, 'key': API_KEY}
-    response = requests.get('https://maps.googleapis.com/maps/api/place/textsearch/json', params=params, timeout=30)
-    data = response.json()
-    return data.get('results', []), data.get('next_page_token')
+# ── API de Google Places ──────────────────────────────────────────────────────
 
-def obtener_detalles(place_id):
-    fields = 'name,formatted_address,rating,user_ratings_total,website,formatted_phone_number'
-    response = requests.get(
-        'https://maps.googleapis.com/maps/api/place/details/json',
-        params={'place_id': place_id, 'fields': fields, 'key': API_KEY},
-        timeout=30,
-    )
-    return response.json().get('result', {})
+def _llamar(url, params):
+    data = requests.get(url, params=params, timeout=30).json()
+    status = data.get('status', 'UNKNOWN_ERROR')
+    if status in ('OK', 'ZERO_RESULTS'):
+        return data
+    if status == 'NOT_FOUND':  # el negocio ya no existe en Maps
+        return None
+    raise PlacesError(f"{status}: {data.get('error_message', 'sin detalle')}")
 
-# --- Main ---
-#   python script.py          → búsqueda nueva (cuenta para el límite diario) y revisa todos sus resultados
-#   python script.py --cola   → solo revisa los negocios que quedaron en cola (no cuenta para el límite)
 
-estado = cargar_estado()
+def buscar(query, api_key):
+    data = _llamar(URL_TEXTSEARCH, {'query': query, 'key': api_key})
+    return [l['place_id'] for l in (data or {}).get('results', []) if l.get('place_id')]
 
-if '--cola' in sys.argv:
-    if not estado['place_ids_pendientes'] or not estado['tipo']:
-        print("No hay negocios en cola.")
-        sys.exit()
-    print(f"Revisando la cola de '{estado.get('busqueda', estado['tipo'])}'")
-else:
-    if verificar_limite() is None:
-        sys.exit()
-    tipo, ciudad = elegir_busqueda(estado)
-    busqueda = f'{tipo} en {ciudad}'
-    print(f"Búsqueda: '{busqueda}'")
-    lugares, _ = buscar_pagina(query=busqueda)
-    place_ids = [l['place_id'] for l in lugares if l.get('place_id')]
-    print(f"  → {len(place_ids)} ubicaciones encontradas.")
-    # Lo que quedara en cola de una búsqueda anterior se descarta: su sector puede ser otro.
-    estado.update(place_ids_pendientes=place_ids, tipo=tipo, busqueda=busqueda)
-    estado['hechas'].append(busqueda)
-    guardar_estado(estado)
 
-lote = estado['place_ids_pendientes']
-categoria = _TIPOS_NEGOCIO.get(estado['tipo'], estado['tipo'])
-print(f"Revisando {len(lote)} ubicaciones...")
+def obtener_detalles(place_id, api_key):
+    data = _llamar(URL_DETALLES, {'place_id': place_id, 'fields': CAMPOS_DETALLE, 'key': api_key})
+    return (data or {}).get('result') or None
 
-resultados = []
-for place_id in lote:
-    detalles = obtener_detalles(place_id)
 
-    # Filtrar: solo negocios SIN página web
-    if detalles.get('website'):
-        continue
-
-    resultados.append({
-        'Nombre del negocio': detalles.get('name', ''),
+def fila_lead(detalles, categoria):
+    """Lead para el CSV, o None si el negocio ya tiene web o le faltan datos básicos."""
+    if detalles.get('website') or not detalles.get('name'):
+        return None
+    telefono = detalles.get('formatted_phone_number', '')
+    return {
+        'Nombre del negocio': detalles['name'],
         'Email': '',
         'Categoría': categoria,
         'Ubicación': detalles.get('formatted_address', ''),
-        'Teléfono': detalles.get('formatted_phone_number', ''),
-        'Tipo teléfono': tipo_telefono(detalles.get('formatted_phone_number', '')),
-    })
+        'Teléfono': telefono,
+        'Tipo teléfono': tipo_telefono(telefono),
+    }
 
-# --- Guardar acumulando en CSV ---
 
-columnas = ['Nombre del negocio', 'Email', 'Categoría', 'Ubicación', 'Teléfono', 'Tipo teléfono']
-df_nuevo = pd.DataFrame(resultados, columns=columnas)
+def revisar(place_ids, categoria, api_key, pausa=0.0):
+    """Devuelve (leads sin web, place_ids que quedaron sin revisar por un error)."""
+    resultados = []
+    for i, place_id in enumerate(place_ids):
+        try:
+            detalles = obtener_detalles(place_id, api_key)
+        except (PlacesError, requests.RequestException) as e:
+            print(f"⚠ Error de la API de Places: {e}. Lo que falta queda en cola (usa --cola).")
+            return resultados, place_ids[i:]
+        if detalles and (fila := fila_lead(detalles, categoria)):
+            resultados.append(fila)
+        time.sleep(pausa)
+    return resultados, []
 
-if os.path.exists(CSV_FILE):
-    df_existente = pd.read_csv(CSV_FILE, encoding='utf-8-sig')
-    antes = len(df_existente)
-    df_total = pd.concat([df_existente, df_nuevo], ignore_index=True)
-    df_total = df_total.drop_duplicates(subset=['Nombre del negocio', 'Ubicación'])
-else:
-    antes = 0
-    df_total = df_nuevo
 
-df_total.to_csv(CSV_FILE, index=False, encoding='utf-8-sig')
+# ── Main ──────────────────────────────────────────────────────────────────────
 
-# La cola se vacía solo cuando los resultados ya están guardados en el CSV
-estado['place_ids_pendientes'] = []
-guardar_estado(estado)
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--cola', action='store_true', help='revisar solo los negocios pendientes de la última búsqueda')
+    args = parser.parse_args(argv)
 
-print(f"{len(resultados)} negocios sin web encontrados, {len(df_total) - antes} nuevos (el resto ya estaban).")
-print(f"Total acumulado en '{CSV_FILE}': {len(df_total)} negocios.")
+    api_key = requerir('GOOGLE_PLACES_API_KEY')
+    estado = cargar_estado()
 
-fijos = [r['Nombre del negocio'] for r in resultados if r['Tipo teléfono'] == 'Fijo']
-if fijos:
-    print(f"📞 {len(fijos)} con teléfono fijo (sin WhatsApp): están en 'Por llamar' del panel → {', '.join(fijos)}")
+    if args.cola:
+        if not estado['place_ids_pendientes'] or not estado['tipo']:
+            print("No hay negocios en cola.")
+            return 0
+        print(f"Revisando la cola de '{estado.get('busqueda', estado['tipo'])}'")
+    else:
+        if not consumir_busqueda_diaria():
+            return 0
+        tipo, ciudad = elegir_busqueda(estado)
+        busqueda = f'{tipo} en {ciudad}'
+        print(f"Búsqueda: '{busqueda}'")
+        try:
+            place_ids = buscar(busqueda, api_key)
+        except (PlacesError, requests.RequestException) as e:
+            # No se marca como hecha: se podrá repetir cuando la API responda.
+            print(f"⚠ La búsqueda ha fallado: {e}")
+            return 1
+        print(f"  → {len(place_ids)} ubicaciones encontradas.")
+        # Lo que quedara en cola de una búsqueda anterior se descarta: su sector puede ser otro.
+        estado.update(place_ids_pendientes=place_ids, tipo=tipo, busqueda=busqueda)
+        estado['hechas'].append(busqueda)
+        guardar_json(rutas.SEARCH_STATE_FILE, estado)
+
+    lote = estado['place_ids_pendientes']
+    categoria = TIPOS_NEGOCIO.get(estado['tipo'], estado['tipo'])
+    print(f"Revisando {len(lote)} ubicaciones...")
+
+    resultados, sin_revisar = revisar(lote, categoria, api_key)
+    nuevos = leads_csv.anadir(resultados, COLUMNAS)
+
+    # La cola solo se recorta cuando lo revisado ya está guardado en el CSV
+    estado['place_ids_pendientes'] = sin_revisar
+    guardar_json(rutas.SEARCH_STATE_FILE, estado)
+
+    print(f"{len(resultados)} negocios sin web encontrados, {nuevos} nuevos (el resto ya estaban).")
+    print(f"Total acumulado en '{rutas.CSV_FILE.name}': {len(leads_csv.leer())} negocios.")
+    fijos = [r['Nombre del negocio'] for r in resultados if r['Tipo teléfono'] == 'Fijo']
+    if fijos:
+        print(f"📞 {len(fijos)} con teléfono fijo (sin WhatsApp): están en 'Por llamar' del panel → {', '.join(fijos)}")
+    return 1 if sin_revisar else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

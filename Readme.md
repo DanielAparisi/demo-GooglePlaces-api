@@ -128,6 +128,25 @@ pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
+Estructura del backend (`app/backend/`):
+
+| Carpeta / archivo | Responsabilidad |
+| ----------------- | --------------- |
+| `main.py`         | `create_app()`: monta middlewares, routers y el manejo de errores |
+| `core/`           | Configuración y rutas (`settings`), errores de negocio, seguridad (CORS/Origin/Host) y el puente a la lógica compartida con `scraper-python/config.py` |
+| `repositories/`   | Acceso al CSV de leads (candado + escritura atómica) y a los logs JSON de envíos |
+| `services/`       | Casos de uso: leads, envíos, guion, maqueta, IA y estado |
+| `routers/`, `schemas/` | Endpoints HTTP y modelos de entrada (Pydantic) |
+| `tests/`          | Tests con datos sintéticos en un directorio temporal (nunca tocan el CSV real) |
+
+Tests:
+
+```bash
+cd app/backend
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
 **Frontend (Astro):**
 
 ```bash

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Clases usadas en HTML generado dinámicamente (innerHTML en JS) */
+/* Clases de componentes compartidos por los componentes React */
 @layer components {
   .selected-row {
     background-color: color-mix(in srgb, #22c55e 8%, transparent);
