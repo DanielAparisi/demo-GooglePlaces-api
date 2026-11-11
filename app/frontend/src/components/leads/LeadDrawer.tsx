@@ -75,6 +75,19 @@ export function LeadDrawer({ lead, onClose, onGenerate, onMarkCall }: LeadDrawer
           </button>
         </header>
 
+        {lead.oportunidad != null && (
+          <Section title={`Oportunidad web · ${lead.oportunidad}/100 (${lead.oportunidad_nivel ?? ''})`}>
+            <div className="h-1.5 overflow-hidden rounded-full bg-slate-800" aria-hidden="true">
+              <div className="h-full rounded-full bg-brand-500" style={{ width: `${lead.oportunidad}%` }} />
+            </div>
+            {lead.oportunidad_motivos && lead.oportunidad_motivos.length > 0 && (
+              <ul className="list-disc space-y-1 pl-5 text-sm text-slate-300">
+                {lead.oportunidad_motivos.map((m) => <li key={m}>{m}</li>)}
+              </ul>
+            )}
+          </Section>
+        )}
+
         <Section title="Contacto">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <PhoneCell lead={lead} />
@@ -88,31 +101,30 @@ export function LeadDrawer({ lead, onClose, onGenerate, onMarkCall }: LeadDrawer
           )}
         </Section>
 
-        {tel && (
-          <Section title="Resultado de la llamada">
-            <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-950/60 p-1 ring-1 ring-inset ring-slate-800">
-              {ESTADOS_LLAMADA.map(({ valor, texto }) => {
-                const activo = estado === valor;
-                return (
-                  <button
-                    key={valor}
-                    type="button"
-                    aria-pressed={activo}
-                    onClick={() => onMarkCall(lead.id, activo ? '' : valor)}
-                    className={`h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-brand-500 ${
-                      activo ? 'bg-slate-700 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {texto}
-                  </button>
-                );
-              })}
-            </div>
-            {lead['Fecha llamada'] && (
-              <p className="text-xs text-slate-500">Última llamada: {lead['Fecha llamada']} · pulsa el estado activo para deshacerlo</p>
-            )}
-          </Section>
-        )}
+        {/* Vale para cualquier canal (llamada, WhatsApp, email, Instagram): alimenta la calibración del modelo */}
+        <Section title="Resultado del contacto">
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-slate-950/60 p-1 ring-1 ring-inset ring-slate-800">
+            {ESTADOS_LLAMADA.map(({ valor, texto }) => {
+              const activo = estado === valor;
+              return (
+                <button
+                  key={valor}
+                  type="button"
+                  aria-pressed={activo}
+                  onClick={() => onMarkCall(lead.id, activo ? '' : valor)}
+                  className={`h-8 rounded-md text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-brand-500 ${
+                    activo ? 'bg-slate-700 text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {texto}
+                </button>
+              );
+            })}
+          </div>
+          {lead['Fecha llamada'] && (
+            <p className="text-xs text-slate-500">Último contacto: {lead['Fecha llamada']} · pulsa el estado activo para deshacerlo</p>
+          )}
+        </Section>
 
         <Section title="Preparar contacto">
           <div className="flex flex-wrap gap-2">

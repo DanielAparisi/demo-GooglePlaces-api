@@ -1,5 +1,5 @@
 import type { Lead } from '../../types/lead';
-import { ContactChannels, LeadTitle, PhoneCell, StatusBadge } from './LeadBits';
+import { ContactChannels, LeadTitle, OpportunityBadge, PhoneCell, StatusBadge } from './LeadBits';
 
 interface LeadCardsProps {
   leads: Lead[];
@@ -24,7 +24,10 @@ export function LeadCards({ leads, onToggle, onOpen }: LeadCardsProps) {
             <button type="button" onClick={() => onOpen(l.id)} className="min-w-0 flex-1 space-y-2 text-left text-sm">
               <div className="flex items-start justify-between gap-3">
                 <LeadTitle lead={l} />
-                <StatusBadge lead={l} />
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <OpportunityBadge lead={l} />
+                  <StatusBadge lead={l} />
+                </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <PhoneCell lead={l} />

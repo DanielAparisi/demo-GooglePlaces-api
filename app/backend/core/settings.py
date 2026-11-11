@@ -27,6 +27,11 @@ class Settings:
         return self.root / 'Leads Google Maps.csv'
 
     @property
+    def pesos_file(self) -> Path:
+        """Pesos calibrados del modelo de oportunidad (los escribe calibrar.py o el panel)."""
+        return self.root / 'pesos_oportunidad.json'
+
+    @property
     def maquetas_dir(self) -> Path:
         return self.root / 'maquetas'
 

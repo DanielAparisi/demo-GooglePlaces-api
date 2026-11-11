@@ -7,6 +7,10 @@ def test_listar_devuelve_los_mas_recientes_primero_con_campos_calculados(env):
     assert por_id[0]['Tipo teléfono'] == 'Móvil'
     assert por_id[1]['Tipo teléfono'] == 'Fijo'
     assert por_id[2]['Tipo teléfono'] == ''
+    for l in leads:
+        assert 0 <= l['oportunidad'] <= 100
+        assert l['oportunidad_nivel'] in ('Alta', 'Media', 'Baja')
+        assert l['oportunidad_motivos']
 
 
 def test_listar_marca_emails_ya_enviados(env):

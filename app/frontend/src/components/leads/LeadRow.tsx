@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { Lead } from '../../types/lead';
 import { ChevronRightIcon } from '../ui/icons';
-import { ContactChannels, LeadTitle, PhoneCell, StatusBadge } from './LeadBits';
+import { ContactChannels, LeadTitle, OpportunityBadge, PhoneCell, StatusBadge } from './LeadBits';
 
 interface LeadRowProps {
   lead: Lead;
@@ -25,6 +25,7 @@ export const LeadRow = memo(function LeadRow({ lead, onToggle, onOpen }: LeadRow
         />
       </td>
       <td className="w-[38%] max-w-0 py-3 pr-4"><LeadTitle lead={lead} /></td>
+      <td className="whitespace-nowrap py-3 pr-4"><OpportunityBadge lead={lead} /></td>
       <td className="whitespace-nowrap py-3 pr-4"><PhoneCell lead={lead} /></td>
       <td className="py-3 pr-4"><ContactChannels lead={lead} /></td>
       <td className="whitespace-nowrap py-3 pr-4"><StatusBadge lead={lead} /></td>

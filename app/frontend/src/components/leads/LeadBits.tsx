@@ -1,7 +1,7 @@
 // Piezas pequeñas de un lead, compartidas por la tabla, las tarjetas móviles y el panel.
 import type { ReactNode } from 'react';
 import { ciudad, safeUrl } from '../../lib/format';
-import { REDES, estadoLead } from '../../lib/leads';
+import { REDES, TONO_OPORTUNIDAD, estadoLead } from '../../lib/leads';
 import { badge } from '../../lib/ui';
 import type { Lead } from '../../types/lead';
 import { CheckIcon, MailIcon, MobileIcon, PhoneIcon } from '../ui/icons';
@@ -9,6 +9,19 @@ import { CheckIcon, MailIcon, MobileIcon, PhoneIcon } from '../ui/icons';
 export function StatusBadge({ lead }: { lead: Lead }) {
   const { texto, tono } = estadoLead(lead);
   return <span className={badge(tono)}>{texto}</span>;
+}
+
+/** Puntuación de oportunidad: cuánto necesita este negocio una web. */
+export function OpportunityBadge({ lead }: { lead: Lead }) {
+  if (lead.oportunidad == null || !lead.oportunidad_nivel) return <span className="text-slate-600">—</span>;
+  return (
+    <span
+      className={`${badge(TONO_OPORTUNIDAD[lead.oportunidad_nivel])} tabular-nums`}
+      title={`Oportunidad ${lead.oportunidad_nivel.toLowerCase()}${lead.oportunidad_motivos?.length ? ': ' + lead.oportunidad_motivos.join(' · ') : ''}`}
+    >
+      {lead.oportunidad}
+    </span>
+  );
 }
 
 export function LeadTitle({ lead }: { lead: Lead }) {

@@ -7,6 +7,7 @@ ROOT = DIR_SCRAPER.parents[1]                       # raíz del repositorio
 ENV_FILE = ROOT / '.env'
 CSV_FILE = ROOT / 'Leads Google Maps.csv'
 BAJAS_FILE = ROOT / 'bajas.txt'
+PESOS_FILE = ROOT / 'pesos_oportunidad.json'   # modelo de oportunidad calibrado (calibrar.py)
 IG_SESSION_FILE = ROOT / '.ig_session.json'
 
 LOG_WHATSAPP = ROOT / 'whatsapp_log.json'

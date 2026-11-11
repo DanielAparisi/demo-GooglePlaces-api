@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useApiStatus } from '../hooks/useApiStatus';
 import { useLeads } from '../hooks/useLeads';
 import { useLeadsView } from '../hooks/useLeadsView';
+import { useModelo } from '../hooks/useModelo';
 import { useToast } from '../hooks/useToast';
 import { countLeads } from '../lib/leads';
 import { btn } from '../lib/ui';
@@ -14,6 +15,7 @@ import { EmptyState, ErrorState, LoadingState } from './leads/LeadsStates';
 import { LeadsTable } from './leads/LeadsTable';
 import { Pagination } from './leads/Pagination';
 import { QrModal } from './modals/QrModal';
+import { ModelPanel } from './stats/ModelPanel';
 import { StatsStrip } from './stats/StatsStrip';
 import { RefreshIcon } from './ui/icons';
 import { Toast } from './ui/Toast';
@@ -24,6 +26,7 @@ export default function LeadsApp() {
   const { leads, loading, error, reload, setSelected, selectAll, marcarLlamada, generar } = useLeads(notify);
   const { connected, status } = useApiStatus();
   const view = useLeadsView(leads);
+  const modelo = useModelo(leads, notify, reload);
 
   const [qrOpen, setQrOpen] = useState(false);
   const [openId, setOpenId] = useState<number | null>(null);
@@ -60,6 +63,13 @@ export default function LeadsApp() {
         </div>
 
         <StatsStrip counts={counts} ready={!loading || leads.length > 0} enviados={enviados} />
+
+        <ModelPanel
+          modelo={modelo.modelo}
+          busy={modelo.busy}
+          onCalibrar={() => void modelo.calibrar()}
+          onRestablecer={() => void modelo.restablecer()}
+        />
 
         <section className="overflow-hidden rounded-card border border-slate-800 bg-slate-900/40">
           <div className="flex flex-wrap items-end justify-between gap-x-4 border-b border-slate-800 px-2 sm:px-3">

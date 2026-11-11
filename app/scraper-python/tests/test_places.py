@@ -59,6 +59,19 @@ def test_revisar_filtra_con_web_y_sin_nombre(places):
     assert sin_revisar == []
 
 
+def test_web_que_es_solo_una_red_social_sigue_siendo_lead(places):
+    places['a'] = ok(name='Fisio Ana', website='https://www.facebook.com/fisioana', user_ratings_total=40,
+                     rating=4.8, business_status='OPERATIONAL', photos=[{}] * 6, opening_hours={'open_now': True})
+    places['b'] = ok(name='Taller Cerrado', business_status='CLOSED_PERMANENTLY')
+
+    resultados, _ = script.revisar(['a', 'b'], 'Fisioterapia', 'k')
+
+    assert len(resultados) == 1
+    lead = resultados[0]
+    assert lead['Web actual'] == 'https://www.facebook.com/fisioana'
+    assert (lead['Reseñas'], lead['Valoración'], lead['Horario'], lead['Fotos']) == ('40', '4.8', 'True', '6')
+
+
 def test_revisar_para_ante_un_error_y_devuelve_lo_que_falta(places):
     places['a'] = ok(name='Taller A', formatted_address='X')
     places['b'] = {'status': 'OVER_QUERY_LIMIT'}

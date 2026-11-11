@@ -5,6 +5,7 @@ import type {
   GeneracionTipo,
   LaunchResult,
   LlamadaEstado,
+  ModeloOportunidad,
   RawLead,
 } from '../types/lead';
 
@@ -44,6 +45,10 @@ export const api = {
     request(`/api/leads/${id}/llamada`, json('PATCH', { estado })),
   generar: (id: number, tipo: GeneracionTipo) =>
     request<{ guion?: string; maqueta?: string }>(`/api/leads/${id}/${tipo}`, { method: 'POST' }),
+
+  getModelo: () => request<ModeloOportunidad>('/api/oportunidad'),
+  calibrar: () => request<ModeloOportunidad>('/api/oportunidad/calibrar', { method: 'POST' }),
+  restablecerModelo: () => request<ModeloOportunidad>('/api/oportunidad/calibrar', { method: 'DELETE' }),
 
   launch: (canal: Canal) => request<LaunchResult>(`/api/${canal}/launch`, { method: 'POST' }),
 

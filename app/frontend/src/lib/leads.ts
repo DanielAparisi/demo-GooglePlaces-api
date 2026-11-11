@@ -1,4 +1,4 @@
-import type { Lead, LlamadaEstado, RawLead, RedSocial, Sector } from '../types/lead';
+import type { Lead, LlamadaEstado, NivelOportunidad, RawLead, RedSocial, Sector } from '../types/lead';
 import type { Tono } from './ui';
 
 export const REDES: { key: RedSocial; etiqueta: string }[] = [
@@ -48,15 +48,22 @@ export const esMovil = (l: Lead): boolean => l['Tipo teléfono'] === 'Móvil';
 
 // ── Filtros de la vista ───────────────────────────────────────────────────────
 
-export type Filtro = 'todos' | 'whatsapp' | 'llamar' | 'email' | 'interesados';
+export type Filtro = 'todos' | 'prioritarios' | 'whatsapp' | 'llamar' | 'email' | 'interesados';
 
 export const FILTROS: { id: Filtro; label: string; incluye: (l: Lead) => boolean }[] = [
   { id: 'todos', label: 'Todos', incluye: () => true },
+  { id: 'prioritarios', label: 'Prioritarios', incluye: (l) => l.oportunidad_nivel === 'Alta' && !l.Llamada },
   { id: 'whatsapp', label: 'WhatsApp', incluye: esMovil },
   { id: 'llamar', label: 'Por llamar', incluye: esPendienteDeLlamar },
   { id: 'email', label: 'Con email', incluye: (l) => !!l.Email },
   { id: 'interesados', label: 'Interesados', incluye: (l) => l.Llamada === 'Interesado' },
 ];
+
+export const TONO_OPORTUNIDAD: Record<NivelOportunidad, Tono> = {
+  Alta: 'success',
+  Media: 'warning',
+  Baja: 'neutral',
+};
 
 // ── Estado comercial de un lead ───────────────────────────────────────────────
 

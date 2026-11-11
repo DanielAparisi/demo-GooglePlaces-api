@@ -17,6 +17,7 @@ import requests
 
 from comun import leads_csv
 from comun.dominio import tipo_telefono
+from comun.oportunidad import cargar_pesos, necesita_web, puntuar
 from comun.ficheros import guardar_json
 from comun import rutas
 from config import requerir
@@ -24,8 +25,12 @@ from config import requerir
 LIMITE_DIARIO = 10
 URL_TEXTSEARCH = 'https://maps.googleapis.com/maps/api/place/textsearch/json'
 URL_DETALLES = 'https://maps.googleapis.com/maps/api/place/details/json'
-CAMPOS_DETALLE = 'name,formatted_address,rating,user_ratings_total,website,formatted_phone_number'
-COLUMNAS = ['Nombre del negocio', 'Email', 'Categoría', 'Ubicación', 'Teléfono', 'Tipo teléfono']
+# business_status, opening_hours y photos no encarecen la petición: ya se pagan los campos
+# de contacto y atmósfera. Alimentan la puntuación de oportunidad (comun/oportunidad.py).
+CAMPOS_DETALLE = ('name,formatted_address,rating,user_ratings_total,website,formatted_phone_number,'
+                  'business_status,opening_hours,photos')
+COLUMNAS = ['Nombre del negocio', 'Email', 'Categoría', 'Ubicación', 'Teléfono', 'Tipo teléfono',
+            'Web actual', 'Reseñas', 'Valoración', 'Horario', 'Fotos', 'Estado negocio']
 
 # Búsqueda en Google Maps → categoría con la que se guarda el lead. Google suele
 # devolver tipos genéricos ("establishment"), así que el sector buscado es más fiable.
@@ -121,18 +126,32 @@ def obtener_detalles(place_id, api_key):
 
 
 def fila_lead(detalles, categoria):
-    """Lead para el CSV, o None si el negocio ya tiene web o le faltan datos básicos."""
-    if detalles.get('website') or not detalles.get('name'):
+    """Lead para el CSV, o None si el negocio ya tiene web propia, está cerrado o le faltan datos.
+
+    Una "web" que es solo Facebook, Instagram, un directorio o un enlace corto no cuenta
+    como web: ese negocio sigue necesitando una y entra como lead.
+    """
+    if not detalles.get('name') or not necesita_web(detalles.get('website')):
         return None
     telefono = detalles.get('formatted_phone_number', '')
-    return {
+    fila = {
         'Nombre del negocio': detalles['name'],
         'Email': '',
         'Categoría': categoria,
         'Ubicación': detalles.get('formatted_address', ''),
         'Teléfono': telefono,
         'Tipo teléfono': tipo_telefono(telefono),
+        'Web actual': detalles.get('website', ''),
+        # Places omite los campos sin datos: sin reseñas = 0 reseñas, no "desconocido"
+        'Reseñas': str(detalles.get('user_ratings_total', 0)),
+        'Valoración': str(detalles.get('rating', '')),
+        'Horario': str(bool(detalles.get('opening_hours'))),
+        'Fotos': str(len(detalles.get('photos') or [])),
+        'Estado negocio': detalles.get('business_status', ''),
     }
+    if fila['Estado negocio'] in ('CLOSED_PERMANENTLY', 'CLOSED_TEMPORARILY'):
+        return None
+    return fila
 
 
 def revisar(place_ids, categoria, api_key, pausa=0.0):
@@ -195,6 +214,11 @@ def main(argv=None):
     guardar_json(rutas.SEARCH_STATE_FILE, estado)
 
     print(f"{len(resultados)} negocios sin web encontrados, {nuevos} nuevos (el resto ya estaban).")
+    # La puntuación no se guarda: el panel la recalcula con lo que añada el enriquecido.
+    pesos = cargar_pesos(rutas.PESOS_FILE)
+    for puntos, nombre in sorted(((puntuar(r, pesos)['puntuacion'], r['Nombre del negocio']) for r in resultados),
+                                 reverse=True)[:5]:
+        print(f"  ★ {puntos:>3}/100  {nombre}")
     print(f"Total acumulado en '{rutas.CSV_FILE.name}': {len(leads_csv.leer())} negocios.")
     fijos = [r['Nombre del negocio'] for r in resultados if r['Tipo teléfono'] == 'Fijo']
     if fijos:

@@ -34,6 +34,7 @@ export function LeadsTable({ leads, allSelected, someSelected, onToggleAll, onTo
             />
           </th>
           <th className={TH}>Negocio</th>
+          <th className={TH} title="Probabilidad (0-100) de que necesite una página web">Oportunidad</th>
           <th className={TH}>Teléfono</th>
           <th className={TH}>Canales</th>
           <th className={TH}>Estado</th>

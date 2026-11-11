@@ -17,7 +17,9 @@ export function useLeadsView(leads: Lead[]) {
 
   const filtered = useMemo(() => {
     const incluye = FILTROS.find((f) => f.id === filtro)!.incluye;
-    return leads.filter((l) => incluye(l) && matchesQuery(l, query));
+    const lista = leads.filter((l) => incluye(l) && matchesQuery(l, query));
+    // En "Prioritarios" primero los que más necesitan una web; en el resto, el orden de llegada.
+    return filtro === 'prioritarios' ? lista.sort((a, b) => (b.oportunidad ?? 0) - (a.oportunidad ?? 0)) : lista;
   }, [leads, filtro, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
