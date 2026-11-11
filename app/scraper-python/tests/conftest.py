@@ -29,5 +29,6 @@ def rutas_aisladas(tmp_path, monkeypatch):
     datos = tmp_path / 'proyecto'
     datos.mkdir()
     for nombre in ['CSV_FILE', 'BAJAS_FILE', 'IG_SESSION_FILE', 'LOG_WHATSAPP', 'LOG_EMAIL',
-                   'LOG_INSTAGRAM', 'USAGE_FILE', 'SEARCH_STATE_FILE', 'PESOS_FILE']:
+                   'LOG_INSTAGRAM', 'USAGE_FILE', 'SEARCH_STATE_FILE', 'PESOS_FILE',
+                   'ENTREGAS_FILE', 'LISTAS_DIR']:
         monkeypatch.setattr(rutas, nombre, datos / getattr(rutas, nombre).name)
