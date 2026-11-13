@@ -3,9 +3,11 @@ import Base from '../layouts/Base.astro';
 import Check from '../components/Check.astro';
 import Faq from '../components/Faq.astro';
 import MovilEjemplo from '../components/MovilEjemplo.astro';
-import { SITIO, WEB, waLink } from '../config';
+import { APPS, PAGO, SITIO, WEB, euros, waLink } from '../config';
 
 const pedirMaqueta = waLink(`Hola, tengo un negocio y me gustaría ver una maqueta gratis de mi web.`);
+const pedirApp = waLink(`Hola, me interesa una aplicación móvil para mi negocio. ¿Podemos hablar?`);
+const pedirMantenimiento = waLink(`Hola, me interesa el mantenimiento de la web por ${WEB.mantenimiento.mes} €/mes.`);
 
 const ventajas = [
   { t: 'Te encuentran en Google', d: 'Cuando alguien busca “taller cerca de mí”, tu web y tu ficha aparecen con fotos, horario y reseñas.' },
@@ -16,7 +18,7 @@ const ventajas = [
 const pasos = [
   { t: 'Nos escribes', d: 'Por WhatsApp, en dos minutos. Dinos qué haces y dónde estás.' },
   { t: 'Ves tu maqueta gratis', d: 'En 48 h te enseñamos cómo quedaría tu web. Sin compromiso.' },
-  { t: 'Si te gusta, la publicamos', d: `Pagas ${WEB.precio} € y en menos de ${WEB.plazoDias} días está en internet.` },
+  { t: 'Si te gusta, la publicamos', d: `Eliges paquete (desde ${WEB.desde} €), firmamos un contrato sencillo y en menos de ${WEB.plazoDias} días está en internet. Pagas por ${PAGO.metodo}.` },
 ];
 
 const ejemplos = [
@@ -27,15 +29,17 @@ const ejemplos = [
 
 const faq = [
   { p: '¿Tengo que saber de ordenadores?', r: 'No. Solo necesitamos que nos cuentes qué haces y nos mandes unas fotos por WhatsApp. Del resto nos encargamos nosotros.' },
-  { p: '¿Hay cuotas mensuales?', r: `No. La web cuesta ${WEB.precio} € en un único pago. ${WEB.nota}` },
+  { p: '¿Hay cuotas mensuales?', r: `No son obligatorias. La web se paga una vez. Si no quieres preocuparte del dominio ni de los cambios, el mantenimiento cuesta ${WEB.mantenimiento.mes} €/mes, sin permanencia.` },
+  { p: '¿Cómo se paga?', r: `Por ${PAGO.metodo}. ${PAGO.plazos} ${PAGO.contrato}` },
+  { p: '¿Qué paquete necesito?', r: 'Si solo quieres que te encuentren y te llamen, el Esencial. Si vives de enseñar tus trabajos (reformas, peluquería…), el Profesional. Si das citas (clínicas, fisioterapia, estética), la Completa. Te lo recomendamos al ver tu maqueta.' },
   { p: 'Ya tengo Facebook o Instagram, ¿para qué quiero web?', r: 'Las redes no salen bien en Google y no son tuyas. La web aparece cuando te buscan, da confianza y enlaza a tus redes.' },
   { p: '¿Y si no me gusta la maqueta?', r: 'No pagas nada. La maqueta es gratis y sin compromiso: solo seguimos si te convence.' },
-  { p: '¿Puedo cambiar cosas después?', r: 'Sí. Incluye dos rondas de cambios antes de publicar, y después cualquier ajuste pequeño (horario, teléfono, fotos) te lo hacemos rápido.' },
+  { p: '¿Puedo cambiar cosas después?', r: 'Sí. Cada paquete incluye rondas de cambios antes de publicar. Después, con el mantenimiento los cambios pequeños (horario, teléfono, fotos) van incluidos; sin él, cada ronda extra cuesta 15 €.' },
 ];
 ---
 <Base
-  titulo={`Página web para tu negocio por ${WEB.precio} € · ${SITIO.marca}`}
-  descripcion={`Webs sencillas para talleres, reformas, clínicas y negocios locales. Maqueta gratis en 48 h y web publicada en ${WEB.plazoDias} días por ${WEB.precio} €, pago único.`}
+  titulo={`Página web para tu negocio desde ${WEB.desde} € · ${SITIO.marca}`}
+  descripcion={`Webs para talleres, reformas, clínicas y negocios locales. Maqueta gratis en 48 h y web publicada en ${WEB.plazoDias} días desde ${WEB.desde} €, pago único.`}
   seccion="negocios"
 >
   <!-- Hero -->
@@ -49,15 +53,15 @@ const faq = [
         </h1>
         <p class="max-w-xl text-lg leading-relaxed text-slate-600">
           Para talleres, reformas, clínicas y negocios de barrio que aún no tienen web. Te enseñamos una
-          maqueta{' '}<strong class="font-semibold text-tinta">gratis</strong> y, si te gusta, la publicamos por{' '}
-          <strong class="font-semibold text-tinta">{WEB.precio} €, pago único</strong>.
+          maqueta{' '}<strong class="font-semibold text-tinta">gratis</strong> y, si te gusta, la publicamos desde{' '}
+          <strong class="font-semibold text-tinta">{WEB.desde} €, pago único</strong>.
         </p>
         <div class="flex flex-wrap gap-3">
           <a href={pedirMaqueta} class="btn btn-primario" target="_blank" rel="noopener">Quiero mi maqueta gratis</a>
           <a href="#ejemplos" class="btn btn-secundario">Ver ejemplos</a>
         </div>
         <ul class="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
-          <li class="flex gap-1.5"><Check /> Sin cuotas mensuales</li>
+          <li class="flex gap-1.5"><Check /> Sin cuotas obligatorias</li>
           <li class="flex gap-1.5"><Check /> Sin compromiso</li>
           <li class="flex gap-1.5"><Check /> Trato directo por WhatsApp</li>
         </ul>
@@ -99,37 +103,122 @@ const faq = [
     </div>
   </section>
 
-  <!-- Cómo funciona + precio -->
-  <section class="contenedor grid gap-12 py-14 sm:py-20 lg:grid-cols-2">
-    <div class="space-y-8">
-      <div class="space-y-2">
-        <p class="eyebrow">Cómo funciona</p>
-        <h2 class="titulo-seccion">Tres pasos y sin letra pequeña</h2>
-      </div>
-      <ol class="space-y-6">
-        {pasos.map((p, i) => (
-          <li class="flex gap-4">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">{i + 1}</span>
-            <div>
-              <h3 class="font-semibold text-tinta">{p.t}</h3>
-              <p class="mt-0.5 text-sm text-slate-600">{p.d}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
+  <!-- Cómo funciona -->
+  <section class="contenedor py-14 sm:py-20">
+    <div class="max-w-2xl space-y-2">
+      <p class="eyebrow">Cómo funciona</p>
+      <h2 class="titulo-seccion">Tres pasos y sin letra pequeña</h2>
     </div>
+    <ol class="mt-10 grid gap-6 md:grid-cols-3">
+      {pasos.map((p, i) => (
+        <li class="flex gap-4">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">{i + 1}</span>
+          <div>
+            <h3 class="font-semibold text-tinta">{p.t}</h3>
+            <p class="mt-0.5 text-sm text-slate-600">{p.d}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </section>
 
-    <div id="precio" class="scroll-mt-20 rounded-card border border-brand-200 bg-white p-6 shadow-card sm:p-8">
-      <p class="eyebrow">Precio</p>
-      <p class="mt-3 flex items-baseline gap-2">
-        <span class="text-5xl font-semibold tracking-tight text-tinta tabular-nums">{WEB.precio} €</span>
-        <span class="text-sm text-slate-500">pago único</span>
-      </p>
-      <ul class="mt-6 space-y-3 text-sm text-slate-700">
-        {WEB.incluye.map((i) => <li class="flex gap-2.5"><Check />{i}</li>)}
-      </ul>
-      <p class="mt-6 rounded-lg bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">{WEB.nota}</p>
-      <a href={pedirMaqueta} class="btn btn-primario mt-6 w-full" target="_blank" rel="noopener">Pedir maqueta gratis</a>
+  <!-- Precios -->
+  <section id="precio" class="scroll-mt-20 border-y border-slate-200 bg-white py-14 sm:py-20">
+    <div class="contenedor">
+      <div class="mx-auto max-w-2xl space-y-2 text-center">
+        <p class="eyebrow">Precios</p>
+        <h2 class="titulo-seccion">Pago único por Bizum, elige lo que necesitas</h2>
+        <p class="text-slate-600">La maqueta es gratis en todos. Te recomendamos un paquete al verla y lo dejamos todo por escrito en un contrato.</p>
+      </div>
+
+      <div class="mt-10 grid gap-4 md:grid-cols-3">
+        {WEB.paquetes.map((p) => (
+          <div class:list={[
+            'relative flex flex-col rounded-card border bg-white p-6 shadow-card',
+            p.destacado ? 'border-brand-500 ring-1 ring-brand-500' : 'border-slate-200',
+          ]}>
+            {p.destacado && (
+              <span class="absolute -top-3 left-6 rounded-full bg-brand-600 px-2.5 py-0.5 text-xs font-semibold text-white">El más elegido</span>
+            )}
+            <h3 class="font-semibold text-tinta">{p.nombre}</h3>
+            <p class="mt-1 text-sm text-slate-600">{p.resumen}</p>
+            <p class="mt-4 flex items-baseline gap-2">
+              <span class="text-4xl font-semibold tracking-tight text-tinta tabular-nums">{euros(p.precio)}</span>
+              <span class="text-sm text-slate-500">pago único</span>
+            </p>
+            <p class="mt-1 text-xs text-slate-500">Publicada en {p.plazoDias} días</p>
+            <ul class="mt-6 flex-1 space-y-2.5 text-sm text-slate-700">
+              {p.incluye.map((i) => <li class="flex gap-2"><Check />{i}</li>)}
+            </ul>
+            <a
+              href={waLink(`Hola, me interesa la web ${p.nombre} (${p.precio} €). ¿Me enseñáis una maqueta gratis?`)}
+              class:list={['btn mt-6 w-full', p.destacado ? 'btn-primario' : 'btn-secundario']}
+              target="_blank"
+              rel="noopener"
+            >
+              Quiero la {p.nombre}
+            </a>
+          </div>
+        ))}
+      </div>
+
+      <div class="mt-6 grid gap-4 lg:grid-cols-2">
+        <!-- Mantenimiento -->
+        <div class="flex flex-col rounded-card border border-slate-200 bg-slate-50 p-6">
+          <p class="eyebrow">Mantenimiento opcional</p>
+          <p class="mt-3 flex flex-wrap items-baseline gap-x-2">
+            <span class="text-3xl font-semibold tracking-tight text-tinta tabular-nums">{euros(WEB.mantenimiento.mes)}</span>
+            <span class="text-sm text-slate-500">/mes · o {euros(WEB.mantenimiento.anio)}/año</span>
+          </p>
+          <p class="mt-1 text-sm text-slate-600">Para que tú no tengas que acordarte de nada.</p>
+          <ul class="mt-5 flex-1 space-y-2.5 text-sm text-slate-700">
+            {WEB.mantenimiento.incluye.map((i) => <li class="flex gap-2"><Check />{i}</li>)}
+          </ul>
+          <a href={pedirMantenimiento} class="btn btn-secundario mt-6 w-full" target="_blank" rel="noopener">Añadir mantenimiento</a>
+        </div>
+
+        <!-- Extras -->
+        <div class="rounded-card border border-slate-200 bg-slate-50 p-6">
+          <p class="eyebrow">Extras sueltos</p>
+          <p class="mt-3 text-sm text-slate-600">¿Te basta el Esencial pero quieres algo más? Añádelo sin cambiar de paquete.</p>
+          <dl class="mt-5 divide-y divide-slate-200 text-sm">
+            {WEB.extras.map((e) => (
+              <div class="flex justify-between gap-4 py-2">
+                <dt class="text-slate-700">{e.nombre}</dt>
+                <dd class="font-medium text-tinta tabular-nums">{e.precio}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </div>
+
+      <p class="mx-auto mt-6 max-w-2xl text-center text-xs leading-relaxed text-slate-500">{WEB.nota}</p>
+    </div>
+  </section>
+
+  <!-- Apps móviles -->
+  <section id="apps" class="contenedor scroll-mt-20 py-14 sm:py-20">
+    <div class="grid items-center gap-8 rounded-card border border-slate-200 bg-white p-6 shadow-card sm:p-10 lg:grid-cols-[1.2fr_1fr]">
+      <div class="space-y-3">
+        <p class="eyebrow">Aplicaciones móviles</p>
+        <h2 class="titulo-seccion">¿Necesitas una app para tu negocio?</h2>
+        <p class="text-slate-600">
+          Reservas, pedidos, tarjeta de fidelidad o tu catálogo en el móvil de tus clientes. La diseñamos a medida
+          y te damos un presupuesto cerrado después de una llamada.
+        </p>
+        <p class="flex flex-wrap items-baseline gap-x-2 pt-2">
+          <span class="text-sm text-slate-500">desde</span>
+          <span class="text-4xl font-semibold tracking-tight text-tinta tabular-nums">{euros(APPS.desde)}</span>
+        </p>
+        <p class="text-sm text-slate-600">Mantenimiento desde {euros(APPS.mantenimientoMes)}/mes: actualizaciones para nuevas versiones de iPhone y Android y corrección de errores.</p>
+        <p class="text-xs leading-relaxed text-slate-500">{APPS.nota}</p>
+      </div>
+      <div>
+        <ul class="space-y-2.5 text-sm text-slate-700">
+          {APPS.incluye.map((i) => <li class="flex gap-2"><Check />{i}</li>)}
+        </ul>
+        <a href={pedirApp} class="btn btn-primario mt-6 w-full" target="_blank" rel="noopener">Hablemos de tu app</a>
+      </div>
     </div>
   </section>
 

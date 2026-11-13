@@ -3,11 +3,14 @@
 Herramienta para **encontrar negocios locales sin página web, decidir a cuáles merece la pena
 contactar y convertirlos en clientes**. Sirve para dos negocios a la vez:
 
-1. **Vender webs** (unos 90 €) a talleres, reformas, clínicas… que aún no tienen web.
+1. **Vender webs** (de 90 a 300 €, más mantenimiento opcional) a talleres, reformas, clínicas… que
+   aún no tienen web, y **apps móviles** a medida (desde 2.000 €). Ver [Precios](#9-precios-webs-mantenimiento-y-apps).
 2. **Vender listas de esos negocios** por suscripción mensual a agencias de marketing y diseño web.
 
 Todo corre en tu ordenador: un panel web para trabajar los leads y unos scripts que buscan,
-enriquecen y contactan. Aparte hay una **landing pública** para darte a conocer como agencia.
+enriquecen y contactan. Aparte hay una **landing pública** para darte a conocer como agencia, con
+los paquetes y precios publicados. Todos los encargos se cierran **con contrato firmado y se
+cobran por Bizum**.
 
 ## Índice
 
@@ -19,7 +22,8 @@ enriquecen y contactan. Aparte hay una **landing pública** para darte a conocer
 6. [Landing pública](#6-landing-pública)
 7. [Datos y ficheros](#7-datos-y-ficheros)
 8. [Tests, seguridad y privacidad](#8-tests-seguridad-y-privacidad)
-9. [Modelo de negocio](#9-modelo-de-negocio--venta-de-listas-a-agencias)
+9. [Precios: webs, mantenimiento y apps](#9-precios-webs-mantenimiento-y-apps)
+10. [Modelo de negocio](#10-modelo-de-negocio--venta-de-listas-a-agencias)
 
 ---
 
@@ -69,20 +73,56 @@ enriquecen y contactan. Aparte hay una **landing pública** para darte a conocer
 
 | Carpeta | Qué es |
 | ------- | ------ |
-| `app/scraper-python/` | Scripts de línea de comandos: buscar, enriquecer, enviar emails e Instagram, calibrar y crear listas. En `comun/` está la lógica compartida con el backend (dominio, puntuación, listas, acceso al CSV con bloqueo). |
+| `app/scraper-python/` | Scripts de línea de comandos: buscar, enriquecer, enviar emails e Instagram, calibrar y crear listas. |
+| `app/comun/` | Paquete Python `comun`, compartido por el backend y los scripts (ver abajo). |
 | `app/backend/` | API FastAPI que usa el panel (`localhost:8000`). |
 | `app/frontend/` | Panel en Astro + React (`localhost:4321`). |
 | `app/whatsApp_node/` | Envío de WhatsApp con whatsapp-web.js. Se lanza desde el panel. |
 | `landing/` | Web pública de la agencia (Astro estático, `localhost:4400` en local). |
 | `maquetas/` | Maquetas HTML generadas para enseñar a los negocios. |
 | `listas/`, `entregas.json` | Listas entregadas a agencias y su registro (fuera de git). |
+| `docs/` | Documentación ampliada: [precios de webs y apps](docs/precios-webs.md) y [el paquete `comun`](docs/paquete-comun.md). |
+
+### Lógica compartida: el paquete `comun`
+
+Las reglas que usan **a la vez el backend y los scripts** viven en un paquete de Python instalable,
+[`app/comun/`](app/comun/):
+
+| Módulo | Qué hace |
+| ------ | -------- |
+| `dominio.py` | Reglas de negocio: sector, ciudad, nombre comercial, tipo de teléfono |
+| `oportunidad.py`, `calibracion.py` | Puntuación de oportunidad y su recalibración con tus llamadas |
+| `listas.py`, `planes.json` | Listas para agencias y sus planes |
+| `leads_csv.py`, `ficheros.py` | Lectura y escritura del CSV con bloqueo entre procesos y escritura atómica |
+| `envios.py` | Logs de envíos y texto de baja |
+| `ia.py` | Cliente de Groq |
+| `entorno.py` | Carga el `.env` y `requerir()` para las claves obligatorias |
+| `rutas.py` | Rutas de todos los ficheros de datos |
+
+```text
+backend  ──┐
+           ├──▶  comun   (comun no importa nada del backend ni de los scripts)
+scripts  ──┘
+```
+
+- Se instala en el venv del backend en **modo editable** (`-e ../comun` en
+  [`app/backend/requirements.txt`](app/backend/requirements.txt)): editas un archivo de `comun` y
+  el backend y los scripts usan la versión nueva sin reinstalar.
+- Así se importa igual desde cualquier sitio (`from comun import listas`), sin tocar `sys.path`, y
+  el editor lo encuentra para el autocompletado.
+- Instálalo siempre en modo editable y lanzando `pip` desde `app/backend`: `rutas.py` calcula la
+  raíz del proyecto desde su propia ubicación y `../comun` es relativo a esa carpeta.
+- [`app/whatsApp_node/lib/dominio.js`](app/whatsApp_node/lib/dominio.js) es una copia en JavaScript
+  de `dominio.py`: si cambias una regla de dominio, cámbiala en los dos.
+
+Por qué se hizo así y qué problemas resolvía: [`docs/paquete-comun.md`](docs/paquete-comun.md).
 
 Estructura del backend (`app/backend/`):
 
 | Carpeta / archivo | Responsabilidad |
 | ----------------- | --------------- |
 | `main.py`         | `create_app()`: monta middlewares, routers y el manejo de errores |
-| `core/`           | Configuración y rutas (`settings`), errores de negocio, seguridad (CORS/Origin/Host) y el puente a la lógica compartida de `scraper-python/comun/` |
+| `core/`           | Configuración y rutas (`settings`), errores de negocio, seguridad (CORS/Origin/Host) y el puente al paquete compartido `comun` (`app/comun/`) |
 | `repositories/`   | Acceso al CSV de leads (candado + escritura atómica) y a los logs JSON de envíos |
 | `services/`       | Casos de uso: leads, envíos, guion, maqueta, IA, estado, modelo de oportunidad y listas para agencias |
 | `routers/`, `schemas/` | Endpoints HTTP y modelos de entrada (Pydantic) |
@@ -138,7 +178,7 @@ desde el panel.
 <summary>Arrancar cada servicio por separado</summary>
 
 ```bash
-# Backend
+# Backend (requirements.txt instala también el paquete comun: lánzalo desde app/backend)
 cd app/backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
@@ -156,7 +196,8 @@ cd app/whatsApp_node && npm install
 
 </details>
 
-Los scripts de `app/scraper-python/` usan el mismo entorno de Python que el backend:
+Los scripts de `app/scraper-python/` usan el mismo entorno de Python que el backend (ahí está
+instalado `comun`):
 
 ```bash
 cd app/scraper-python
@@ -265,9 +306,19 @@ Las reglas de diseño de las maquetas están en `.claude/skills/maquetas/SKILL.m
 
 ### Paso 4 · Cerrar la venta
 
-Con los **Interesados**: enséñales su maqueta, cierra precio (la landing anuncia 90 € en pago
-único) y entrega la web. La pestaña *Interesados* es tu lista de seguimiento. Esos leads no
-entran nunca en las listas que vendes a agencias.
+Con los **Interesados** (la pestaña *Interesados* es tu lista de seguimiento):
+
+1. **Enséñales su maqueta** (enlace por WhatsApp o en persona).
+2. **Recomiéndales un paquete según su sector**, no la tabla entera (ver
+   [Precios](#9-precios-webs-mantenimiento-y-apps)). Si piden algo más, ofrece extras o el paquete
+   superior. Si lo que quieren es una app, presupuesto cerrado tras una llamada.
+3. **Firmad el contrato** antes de empezar, siempre, también en el Esencial.
+4. **Cobra por Bizum** según los plazos de [Pago y contrato](#pago-y-contrato): el Esencial al
+   publicar, y el resto 50 % al firmar y 50 % al publicar.
+5. **Ofrece el mantenimiento al cerrar** (15 €/mes o, mejor, 150 €/año).
+6. **Entrega la web** cuando hayas recibido el pago final.
+
+Los Interesados no entran nunca en las listas que vendes a agencias.
 
 ### Paso 5 · Mejorar la puntuación con tus llamadas
 
@@ -293,7 +344,8 @@ Los pesos se guardan en `pesos_oportunidad.json` y el panel los usa al momento.
 | ------ | --- |
 | Cada día | `script.py` (hasta 10 búsquedas) → `enrich_emails.py --solo-sectores` |
 | Cada día | Panel → *Prioritarios* → guion → llamar → marcar resultado |
-| Al haber interés | Generar maqueta → enseñarla → cerrar |
+| Al haber interés | Generar maqueta → enseñarla → proponer paquete → contrato → Bizum → entregar |
+| Cada mes | Recordar el Bizum del mantenimiento a quien paga mensual |
 | Cada semana | Envío de WhatsApp/email a los no contactados · recalibrar si hay datos nuevos |
 | Cada mes | Preparar la lista de cada agencia suscrita (sección 5) |
 
@@ -347,7 +399,7 @@ python crear_lista.py --entregas      # historial de entregas
 ```
 
 Los planes (cantidad, exclusividad y precio) viven en un único fichero,
-[`app/scraper-python/comun/planes.json`](app/scraper-python/comun/planes.json): lo usan el panel,
+[`app/comun/comun/planes.json`](app/comun/comun/planes.json): lo usan el panel,
 `crear_lista.py` y la landing. Para cambiar un precio, cámbialo solo ahí.
 
 ---
@@ -359,7 +411,7 @@ para darte a conocer como agencia:
 
 | Página         | Para quién        | Qué ofrece |
 | -------------- | ----------------- | ---------- |
-| `/`            | Negocios locales  | Web por 90 € en pago único, maqueta gratis en 48 h |
+| `/`            | Negocios locales  | Webs de 90 a 300 € en pago único, mantenimiento opcional, apps desde 2.000 € y maqueta gratis en 48 h |
 | `/agencias`    | Agencias          | Planes de listas (de `planes.json`) y muestra gratis de 10 leads |
 | `/aviso-legal` | —                 | Aviso legal (LSSI) y privacidad |
 
@@ -369,7 +421,8 @@ que envía mensajes reales, nunca queda expuesto a internet.
 
 **Antes de publicarla**, rellena los `TODO` de [`landing/src/config.ts`](landing/src/config.ts):
 nombre de la agencia (ahora provisional: *Barrio Digital*), WhatsApp, teléfono, email, dominio,
-ciudad, y titular y NIF para el aviso legal. Ahí también están el precio de la web y lo que incluye.
+ciudad, y titular y NIF para el aviso legal. Ahí también están los paquetes, los extras, el mantenimiento, la oferta de apps y las condiciones
+de pago y contrato (`WEB`, `APPS` y `PAGO`). Si cambias un precio, cámbialo también en la sección 9.
 
 **Publicarla gratis** (Cloudflare Pages o Netlify): conecta el repositorio con carpeta raíz
 `landing`, comando de build `npm run build` y carpeta de salida `dist`.
@@ -406,7 +459,7 @@ pisarse ni corromperlo.
 
 ```bash
 cd app/backend && pip install -r requirements-dev.txt && python -m pytest
-cd ../scraper-python && ../backend/.venv/bin/python -m pytest
+cd ../scraper-python && ../backend/.venv/bin/python -m pytest   # scripts y paquete comun
 cd ../whatsApp_node && npm test
 cd ../frontend && npx astro check
 cd ../../landing && npx astro check
@@ -428,7 +481,103 @@ cd ../../landing && npx astro check
 
 ---
 
-## 9. Modelo de negocio — venta de listas a agencias
+## 9. Precios: webs, mantenimiento y apps
+
+Son los mismos que publica la landing ([`landing/src/config.ts`](landing/src/config.ts)). Si cambias
+uno, cámbialo allí también. La explicación completa (por qué estos importes, horas por paquete,
+qué no entra) está en [`docs/precios-webs.md`](docs/precios-webs.md).
+
+### Webs (pago único)
+
+|                                       | **Esencial** | **Profesional** ⭐ | **Completa** |
+| ------------------------------------- | ------------ | ----------------- | ------------ |
+| **Precio**                            | **90 €**     | **180 €**         | **300 €**    |
+| Páginas                               | 1 (hasta 4 secciones) | Hasta 5  | Hasta 8      |
+| Móvil, botones de llamar y WhatsApp, mapa, horario y reseñas | ✓ | ✓ | ✓          |
+| Revisión de la ficha de Google        | ✓            | ✓                 | ✓            |
+| Galería de trabajos / antes-después   | —            | ✓                 | ✓            |
+| Formulario de contacto                | —            | ✓                 | ✓            |
+| SEO local básico                      | —            | ✓                 | ✓            |
+| Correo profesional                    | —            | ✓                 | ✓            |
+| Reservas o citas online               | —            | —                 | ✓            |
+| Carta o catálogo con precios          | —            | —                 | ✓            |
+| Segundo idioma                        | —            | —                 | ✓            |
+| Rondas de cambios                     | 2            | 3                 | 4            |
+| Plazo                                 | 7 días       | 10 días           | 14 días      |
+
+**Extras sueltos:** sección o página adicional 25 € · galería 30 € · formulario 20 € · correo
+profesional 20 € · reservas online 60 € · segundo idioma 50 € · logo sencillo 40 € · ronda de
+cambios extra 15 € · entrega urgente (3 días) +30 %. Si alguien suma tres extras o más, ofrécele el
+paquete superior.
+
+**Qué recomendar según el sector:** taller → Esencial · reformas → Profesional (galería) ·
+peluquería o estética → Profesional + reservas · restaurante → Profesional + carta ·
+fisioterapia o clínica → Completa (citas).
+
+### Pago y contrato
+
+**Cómo se cobra y se formaliza (siempre):**
+
+- **Contrato firmado en todos los encargos**, también en el Esencial de 90 €, antes de empezar a
+  trabajar. Debe recoger qué incluye el paquete (y qué no), el plazo, el precio y los plazos de
+  pago, cuántas rondas de cambios hay y cuánto cuesta una extra, que el dominio queda a nombre del
+  cliente y, si hay mantenimiento, su precio y cómo se da de baja.
+- **Todos los pagos por Bizum:**
+
+  | Encargo                   | Cuándo se paga                                     |
+  | ------------------------- | -------------------------------------------------- |
+  | Web Esencial              | 100 % al publicar                                  |
+  | Web Profesional / Completa | 50 % al firmar el contrato y 50 % al publicar     |
+  | Extras                    | Junto con el pago final                            |
+  | Mantenimiento de web      | Cada mes (15 €) o de una vez al año (150 €)        |
+  | App móvil                 | 50 % al firmar y 50 % al publicar                  |
+  | Mantenimiento de app      | Cada mes                                           |
+
+- **No se publica nada sin el pago final recibido.**
+- **Bizum tiene límites por operación y por día**, y dependen del banco (lo habitual es hasta
+  1.000 € por envío). El 50 % de una app de 2.000 € cabe justo; en una app más cara, parte cada
+  pago en varios Bizum o pásate a transferencia para ese encargo.
+- **Guarda el justificante de cada Bizum** junto a su factura. Los cobros por Bizum de una
+  actividad económica tienen que declararse como cualquier otro ingreso.
+
+### Mantenimiento de webs (opcional)
+
+**15 €/mes o 150 €/año**, sin permanencia. Incluye dominio y alojamiento gestionados, 30 minutos
+de cambios al mes y copias de seguridad. A ti te cuesta unos 10 €/año (el dominio `.es`; el
+alojamiento estático es gratis). Ofrécelo al cerrar la venta, no antes. Sin mantenimiento, el
+dominio queda a nombre del cliente y los cambios se cobran como ronda extra.
+
+### Aplicaciones móviles
+
+**Desde 2.000 €**, con presupuesto cerrado tras una llamada. Incluye app para iPhone y Android,
+diseño a medida, panel para gestionar contenidos, reservas o pedidos, publicación en App Store y
+Google Play y 3 meses de soporte. Las cuentas de desarrollador las paga el cliente (Apple 99 $/año,
+Google 25 $ una vez). Contrato con el presupuesto cerrado por escrito y pago por Bizum: 50 % al
+firmar y 50 % al publicar.
+
+**Mantenimiento de apps: desde 60 €/mes.** Incluye actualizaciones para las nuevas versiones de
+iOS y Android y la corrección de errores. Una app sin mantener deja de funcionar bien en uno o dos años.
+
+### Lo que no entra
+
+Tiendas online (mínimo 500–800 € o derivar a Shopify), webs que el cliente edita él solo
+(WordPress con panel), redacción completa o fotos profesionales, y prometer posicionamiento en Google.
+
+### Cuentas para el objetivo de Navidad (~300 €)
+
+| Combinación                    | Total |
+| ------------------------------ | ----- |
+| 4 × Esencial                   | 360 € |
+| 1 × Profesional + 2 × Esencial | 360 € |
+| 2 × Profesional                | 360 € |
+| 1 × Completa                   | 300 € |
+
+Una venta del Profesional equivale a dos Esenciales: en diciembre lo que escasea es el tiempo para
+contactar y cerrar, así que empuja el paquete del medio.
+
+---
+
+## 10. Modelo de negocio — venta de listas a agencias
 
 ### Idea
 
@@ -463,7 +612,7 @@ Lo que diferencia estas listas de las bases de datos genéricas del mercado:
 | Premium  | 500 leads/mes + exclusividad por zona        | 300€/mes  |
 
 Los planes (cantidad, exclusividad y precio) viven en un único fichero,
-[`app/scraper-python/comun/planes.json`](app/scraper-python/comun/planes.json): lo usan el panel,
+[`app/comun/comun/planes.json`](app/comun/comun/planes.json): lo usan el panel,
 `crear_lista.py` y la landing. Para cambiar un precio, cámbialo solo ahí.
 
 ### Objetivo de ingresos

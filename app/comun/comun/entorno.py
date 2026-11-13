@@ -1,11 +1,10 @@
 """Carga de credenciales desde el .env de la raíz del proyecto (sin dependencias).
 
-Las reglas de dominio viven en comun/dominio.py; se reexportan aquí para que
-`from config import sector_de` siga funcionando.
+Se carga al importar el módulo, así que basta con `from comun.entorno import requerir`
+para tener GROQ_API_KEY, LANDING_URL… en `os.environ`.
 """
 import os
 
-from comun.dominio import ciudad_de, limpiar_dato, nombre_comercial, sector_de, tipo_telefono  # noqa: F401
 from comun.rutas import ENV_FILE
 
 

@@ -1,3 +1,5 @@
+# Lógica compartida con los scripts (ruta relativa a app/backend, desde donde se instala)
+-e ../comun
 fastapi==0.136.1
 uvicorn[standard]==0.46.0
 pandas==3.0.2

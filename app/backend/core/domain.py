@@ -1,21 +1,12 @@
 """Código compartido con los scripts de scraper-python.
 
 Las reglas de dominio, el acceso al CSV (con su bloqueo entre procesos) y el cliente de
-IA viven en scraper-python/comun/ porque los scripts también los usan. Este módulo es el
-único punto del backend que ajusta sys.path para importarlos.
+IA viven en el paquete `comun` (app/comun), instalado en el venv con requirements.txt.
 """
-import sys
-
-from core.settings import ROOT
-
-_SCRAPER_DIR = str(ROOT / 'app' / 'scraper-python')
-if _SCRAPER_DIR not in sys.path:
-    sys.path.insert(0, _SCRAPER_DIR)
-
-import config  # noqa: E402,F401  (carga el .env de la raíz: GROQ_API_KEY, LANDING_URL…)
-from comun import calibracion, ia, leads_csv, listas  # noqa: E402
-from comun.dominio import ciudad_de, limpiar_dato, nombre_comercial, sector_de, tipo_telefono  # noqa: E402
-from comun.oportunidad import NOMBRES_BLOQUE, PESOS_BASE, cargar_pesos, puntuar  # noqa: E402
+from comun import entorno  # noqa: F401  (carga el .env de la raíz: GROQ_API_KEY, LANDING_URL…)
+from comun import calibracion, ia, leads_csv, listas
+from comun.dominio import ciudad_de, limpiar_dato, nombre_comercial, sector_de, tipo_telefono
+from comun.oportunidad import NOMBRES_BLOQUE, PESOS_BASE, cargar_pesos, puntuar
 
 __all__ = ['calibracion', 'ia', 'leads_csv', 'listas', 'NOMBRES_BLOQUE', 'PESOS_BASE', 'cargar_pesos', 'ciudad_de', 'limpiar_dato', 'nombre_comercial', 'puntuar', 'sector_de',
            'tipo_telefono']

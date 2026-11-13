@@ -20,7 +20,7 @@ from comun.dominio import tipo_telefono
 from comun.oportunidad import cargar_pesos, necesita_web, puntuar
 from comun.ficheros import guardar_json
 from comun import rutas
-from config import requerir
+from comun.entorno import requerir
 
 LIMITE_DIARIO = 10
 URL_TEXTSEARCH = 'https://maps.googleapis.com/maps/api/place/textsearch/json'

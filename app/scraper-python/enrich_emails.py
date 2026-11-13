@@ -18,7 +18,7 @@ import requests
 
 from comun import leads_csv
 from comun.dominio import ciudad_de, sector_de
-from config import requerir
+from comun.entorno import requerir
 
 DELAY_ENTRE_LEADS = 3
 DELAY_ENTRE_PETICIONES = 1

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "comun"
+version = "0.1.0"
+description = "Lógica compartida por el backend y los scripts: dominio, puntuación, listas, CSV con bloqueo e IA"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.2",
+    "groq>=1.0",
+]
+
+[tool.setuptools]
+packages = ["comun"]
+
+[tool.setuptools.package-data]
+comun = ["planes.json"]

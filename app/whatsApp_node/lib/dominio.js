@@ -1,4 +1,4 @@
-// Reglas de dominio. Son una copia de app/scraper-python/comun/dominio.py: si cambias
+// Reglas de dominio. Son una copia de app/comun/comun/dominio.py: si cambias
 // una, cambia la otra. Los tests de ambos lados usan los mismos casos para detectarlo.
 
 // Los datos del negocio vienen de Google Maps y los controla su dueño: se limpian

@@ -1,6 +1,6 @@
 """Listas de leads para agencias con suscripción mensual: previsualizar, crear y entregar.
 
-El algoritmo vive en scraper-python/comun/listas.py (también lo usa crear_lista.py).
+El algoritmo vive en app/comun/comun/listas.py (también lo usa crear_lista.py).
 """
 import calendar
 import io

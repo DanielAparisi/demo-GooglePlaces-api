@@ -10,7 +10,7 @@ def cliente() -> Groq:
     """Se crea al primer uso: importar este módulo no exige tener la clave."""
     global _cliente
     if _cliente is None:
-        from config import requerir
+        from comun.entorno import requerir
         try:
             clave = requerir('GROQ_API_KEY')
         except SystemExit as e:

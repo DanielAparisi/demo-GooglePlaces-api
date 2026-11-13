@@ -17,7 +17,7 @@ from comun import ia, leads_csv
 from comun.dominio import ciudad_de, limpiar_dato, nombre_comercial
 from comun.envios import PIE_BAJA, LogEnvios, cargar_bajas, esperar_entre
 from comun import rutas
-from config import requerir
+from comun.entorno import requerir
 
 DELAY_S = 10
 ASUNTO_POR_DEFECTO = 'Mejora tu presencia digital — consulta gratuita'

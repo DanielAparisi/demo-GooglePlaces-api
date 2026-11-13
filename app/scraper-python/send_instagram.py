@@ -15,7 +15,7 @@ from comun import ia, leads_csv
 from comun.dominio import ciudad_de, limpiar_dato, nombre_comercial
 from comun.envios import LogEnvios, cargar_bajas, esperar_entre
 from comun import rutas
-from config import requerir  # noqa: F401  (carga el .env)
+from comun.entorno import requerir  # noqa: F401  (carga el .env)
 
 DELAY_S = 15
 # Rutas de instagram.com que no son perfiles

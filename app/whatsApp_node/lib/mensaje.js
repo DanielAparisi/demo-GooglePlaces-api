@@ -6,7 +6,7 @@ const { ciudadDe, limpiarDato } = require('./dominio');
 
 const MODELO = 'llama-3.3-70b-versatile';
 const PORTFOLIO_URL = 'https://portfolio-techh.netlify.app/';
-// Mismo texto que PIE_BAJA en app/scraper-python/comun/envios.py
+// Mismo texto que PIE_BAJA en app/comun/comun/envios.py
 const PIE_BAJA = 'Si no quieres recibir más mensajes, responde "baja" y no volveré a escribirte.';
 
 let cliente = null;

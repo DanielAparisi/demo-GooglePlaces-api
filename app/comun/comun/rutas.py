@@ -1,8 +1,10 @@
 """Rutas de los ficheros que comparten scripts y backend."""
 from pathlib import Path
 
-DIR_SCRAPER = Path(__file__).resolve().parents[1]   # app/scraper-python
-ROOT = DIR_SCRAPER.parents[1]                       # raíz del repositorio
+# El paquete se instala en modo editable (pip install -e app/comun), así que __file__
+# sigue apuntando a app/comun/comun/rutas.py dentro del repositorio.
+ROOT = Path(__file__).resolve().parents[3]          # raíz del repositorio
+DIR_SCRAPER = ROOT / 'app' / 'scraper-python'
 
 ENV_FILE = ROOT / '.env'
 CSV_FILE = ROOT / 'Leads Google Maps.csv'

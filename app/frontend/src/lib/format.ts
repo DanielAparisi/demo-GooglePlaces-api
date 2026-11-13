@@ -11,7 +11,7 @@ export function safeUrl(valor: unknown): string | null {
 /**
  * Ciudad de una dirección de Google Maps: va justo detrás del código postal
  * ("C. Delicias, 5, Arganzuela, 28005 Madrid, Spain" → "Madrid").
- * Misma regla que `ciudad_de` en scraper-python/comun/dominio.py.
+ * Misma regla que `ciudad_de` en comun/comun/dominio.py.
  */
 export function ciudad(ubicacion: string | null | undefined): string {
   const partes = String(ubicacion ?? '').split(',').map((p) => p.trim()).filter(Boolean);

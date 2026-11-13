@@ -1,7 +1,7 @@
 """Acceso al CSV de leads desde el backend.
 
 Usa el mismo bloqueo de fichero y la misma escritura atómica que los scripts
-(scraper-python/comun/leads_csv.py), así el panel y un enriquecido en marcha no se
+(app/comun/comun/leads_csv.py), así el panel y un enriquecido en marcha no se
 pisan los cambios.
 """
 from contextlib import contextmanager
