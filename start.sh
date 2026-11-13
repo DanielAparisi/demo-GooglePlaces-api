@@ -20,7 +20,7 @@ die()  { echo -e "${RED}[error]${NC} $*" >&2; exit 1; }
 cleanup() {
   echo ""
   log "Deteniendo todos los servicios..."
-  kill "$PID_BACKEND" "$PID_FRONTEND" 2>/dev/null || true
+  kill "$PID_BACKEND" "$PID_FRONTEND" "$PID_LANDING" 2>/dev/null || true
   wait 2>/dev/null
   log "Entorno detenido."
 }
@@ -56,6 +56,19 @@ fi
 npm run dev > "$LOGS/frontend.log" 2>&1 &
 PID_FRONTEND=$!
 log "Frontend PID=$PID_FRONTEND  →  http://localhost:4321  (log: .logs/frontend.log)"
+
+# ── Landing pública (Astro) ───────────────────────────────────────────────────
+log "Levantando landing (Astro)..."
+cd "$ROOT/landing"
+
+if [ ! -d "node_modules" ]; then
+  warn "node_modules ausente — ejecutando npm install..."
+  npm install --silent
+fi
+
+npm run dev > "$LOGS/landing.log" 2>&1 &
+PID_LANDING=$!
+log "Landing  PID=$PID_LANDING  →  http://localhost:4400  (log: .logs/landing.log)"
 
 # ── WhatsApp Node ─────────────────────────────────────────────────────────────
 # No se arranca aquí: send_whatsapp.js envía mensajes reales, así que solo se lanza
