@@ -24,6 +24,8 @@ cobran por Bizum**.
 8. [Tests, seguridad y privacidad](#8-tests-seguridad-y-privacidad)
 9. [Precios: webs, mantenimiento y apps](#9-precios-webs-mantenimiento-y-apps)
 10. [Modelo de negocio](#10-modelo-de-negocio--venta-de-listas-a-agencias)
+11. [Plan de mejora de la captación de leads](#11-plan-de-mejora-de-la-captación-de-leads)
+12. [Estimación de ingresos si se hace bien](#12-estimación-de-ingresos-si-se-hace-bien)
 
 ---
 
@@ -81,7 +83,7 @@ cobran por Bizum**.
 | `landing/` | Web pública de la agencia (Astro estático, `localhost:4400` en local). |
 | `maquetas/` | Maquetas HTML generadas para enseñar a los negocios. |
 | `listas/`, `entregas.json` | Listas entregadas a agencias y su registro (fuera de git). |
-| `docs/` | Documentación ampliada: [precios de webs y apps](docs/precios-webs.md) y [el paquete `comun`](docs/paquete-comun.md). |
+| `docs/` | Documentación ampliada: [precios de webs y apps](docs/precios-webs.md), [el paquete `comun`](docs/paquete-comun.md), [plan de mejora del scraping](docs/mejoras-scraping.md) y [notas sobre fuentes alternativas](docs/CrappingDatos.md). |
 
 ### Lógica compartida: el paquete `comun`
 
@@ -223,6 +225,7 @@ python script.py --cola   # termina de revisar lo que quedó pendiente (no gasta
   capa gratuita de Google.
 - Si la API falla a mitad, lo encontrado se guarda y el resto queda en cola para `--cola`.
 - Sectores y ciudades se cambian en `TIPOS_NEGOCIO`, `PESOS` y `CIUDADES` de `script.py`.
+- Hoy rinde ~1,2 leads por búsqueda. Cómo mejorarlo está en la [sección 11](#11-plan-de-mejora-de-la-captación-de-leads).
 
 ### Paso 2 · Enriquecer con email y redes
 
@@ -666,3 +669,170 @@ Modelo de precios objetivo para el SaaS:
 | Agency  | ilimitado  | 199€/mes  |
 
 Con 50 clientes en plan Starter son **1.450€/mes recurrentes y automáticos sin intervención manual**.
+
+---
+
+## 11. Plan de mejora de la captación de leads
+
+Resumen de [`docs/mejoras-scraping.md`](docs/mejoras-scraping.md), que analiza el buscador actual y
+las fuentes alternativas de [`docs/CrappingDatos.md`](docs/CrappingDatos.md).
+
+**Idea principal:** antes de buscar fuentes nuevas, conviene arreglar la que ya tienes. Google
+Places no está agotado, se está usando mal.
+
+### Dónde estamos
+
+9 búsquedas hechas → **11 leads útiles** de los sectores objetivo (5 talleres, 3 reformas, 3 fisios),
+**~1,2 por búsqueda**. Por qué rinde tan poco:
+
+1. **Solo se revisan los 20 primeros resultados** (Google da hasta 60 en 3 páginas), y esos 20
+   son los negocios más conocidos, que ya tienen web.
+2. **Busca en ciudades grandes**, donde casi todos tienen web y que están lejos de ti.
+3. **Pide los detalles negocio a negocio** (1 + 20 peticiones por búsqueda): es lento y
+   probablemente se sale del cupo gratis de Google. **Revisa Google Cloud Console → Facturación.**
+
+### Qué hacer con cada fuente
+
+| Fuente | Veredicto | Por qué |
+| ------ | --------- | ------- |
+| Google Places (mejorado) | ✅ Ya, prioridad 1 | Ya existe; con la API nueva da 3 veces más negocios con mucho menos gasto |
+| Páginas Amarillas | ✅ Diciembre | Ya se usa para emails; usarla también como fuente cuesta poco y tiene muchos oficios |
+| Milanuncios / Wallapop | ✅ Diciembre, **a mano** | Autónomos que ya pagan por anunciarse. Automatizarlo choca con antibots, inicio de sesión y términos de uso |
+| BORME (empresas nuevas) | ⏳ Enero | Buena señal y presupuesto, pero sin teléfono ni email y sin autónomos: para Profesional, Completa o apps |
+| Facebook | ❌ No hace falta | `necesita_web()` ya trata un Facebook o Instagram como "sin web"; mejor subirles la puntuación |
+| Agregadores (Just Eat, Glovo, Playtomic) | ❌ No | Necesitan pedidos o reservas (proyecto de app), no una web de 90–300 € |
+| Supabase / PostgreSQL | ❌ Ahora no | Con 81 leads y una persona el CSV basta. Si crece: SQLite primero |
+
+### Plan por fases
+
+| Fase | Cuándo | Qué |
+| ---- | ------ | --- |
+| **1** | Esta semana | **Places API (New)** con 3 páginas (hasta 60 negocios y 1–3 peticiones por búsqueda) · **municipios y barrios cercanos** de Murcia en vez de las 30 ciudades grandes · **más sectores de oficios** (electricista, fontanero, cerrajero, carpintería, pintor, peluquería, estética, autoescuela…) · **medir cuántos leads da cada búsqueda** para ajustar `PESOS` |
+| **2** | Diciembre | Columna **`Fuente`** en el CSV · **duplicados por teléfono** entre fuentes · **Páginas Amarillas** como segunda fuente · **"Añadir lead" a mano** en el panel (Milanuncios, negocios que ves por la calle) |
+| **3** | Enero | **BORME**: constituciones en Murcia y Alicante desde los datos abiertos del BOE, cruzadas con Places para sacar el teléfono · valorar **SQLite** si hay miles de leads |
+
+**Qué esperar tras la fase 1** (estimación, a comprobar con la medición): de ~1,2 a **4–8 leads
+sin web por búsqueda**, de 21 a **1–3 peticiones** a Google, y la mayoría de los leads **a
+distancia de visita**. Para 3–4 ventas antes de Navidad bastan unos **100 leads buenos y cercanos**.
+
+### Riesgos (consúltalo con una gestoría o un abogado)
+
+- Los **términos de Google Maps Platform** limitan guardar los datos de Places, y revenderlos en
+  las listas para agencias es lo que más choca con ellos.
+- El teléfono de un autónomo es un **dato personal (RGPD)** aunque esté publicado.
+- La **LSSI** restringe el email y el WhatsApp comercial sin consentimiento previo. **Llamar o
+  visitar en persona es el canal más seguro**, y el que mejor cierra.
+- **Páginas Amarillas y Milanuncios** suelen prohibir el scraping en sus términos: poco volumen y
+  contacto uno a uno.
+
+---
+
+## 12. Estimación de ingresos si se hace bien
+
+> ⚠ **Son estimaciones, no datos.** Salen de suposiciones razonables para la venta en frío a
+> negocios locales con maqueta personalizada, no de tus resultados. Hoy todavía no hay llamadas
+> marcadas en el panel. Tras los primeros **100 contactos**, cambia los porcentajes de abajo por
+> los tuyos (pestaña *Interesados* y columna `Llamada` del CSV) y rehaz las cuentas.
+
+### El embudo
+
+```text
+Leads sin web ──▶ hablas con el dueño ──▶ le interesa / ve la maqueta ──▶ compra
+     100               ~50 (50 %)                ~8–10 (15–20 %)          ~3 (30–40 %)
+```
+
+Con llamada o visita y maqueta ya hecha, **de cada 100 leads salen unas 2–4 ventas**. Es la
+cifra clave: todo lo demás se deriva de ella.
+
+**Ticket medio por venta:**
+
+| Escenario | Mezcla de paquetes | Ticket medio (con extras) |
+| --------- | ------------------ | ------------------------- |
+| Conservador | 70 % Esencial · 25 % Profesional · 5 % Completa | ~130 € |
+| Realista | 50 % Esencial · 35 % Profesional · 15 % Completa | ~165 € |
+| Optimista | Más Profesional y precios subidos tras los primeros clientes | ~200 € |
+
+**Mantenimiento:** cada venta con mantenimiento suma 15 €/mes **que se acumulan** mes a mes.
+Es lo que convierte esto en un ingreso estable.
+
+### Tres escenarios (dedicación parcial, compatible con estudiar)
+
+| | **Conservador** | **Realista** | **Optimista** |
+| - | --------------- | ------------ | ------------- |
+| Leads contactados al mes | ~150 | ~200 | ~250 |
+| Conversión lead → venta | 2 % | 3 % | 4 % |
+| **Ventas de web al mes** | **3** | **6** | **10** |
+| Aceptan mantenimiento | 25 % | 35 % | 40 % |
+| Apps móviles (desde el mes 7) | 0 | 2–3 | 6 |
+| Horas a la semana | ~7 h | ~13 h | ~20 h |
+| **Ingresos en el mes 1** (diciembre 2026, arranque: la mitad de ventas) | ~200 € | ~500 € | ~1.000 € |
+| **Ingresos/mes en el mes 6** (mayo 2027) | ~450 € | ~1.200 € | ~2.400 € |
+| **Ingresos/mes en el mes 12** (noviembre 2027, con la media de apps) | ~525 € | ~2.200 € | ~4.700 € |
+| **Facturación del primer año** | **~5.500 €** | **~18.000–20.000 €** | **~40.000 €** |
+
+<details>
+<summary>Cómo salen las cuentas</summary>
+
+- **Webs:** ventas al mes × ticket medio. Realista: 6 × 165 € = 990 €/mes.
+- **Mantenimiento acumulado en el mes *n*:** ventas al mes × % que lo acepta × *n* × 15 €.
+  Realista: 6 × 35 % ≈ 2 clientes nuevos al mes → unos 13 en el mes 6 (~190 €/mes) y 25 en el
+  mes 12 (~375 €/mes). Se supone que casi nadie lo deja.
+- **Apps:** 2.000 € cada una, y solo a partir del mes 7, cuando ya tengas trabajos que enseñar.
+  Realista: 2–3 en el segundo semestre (~830 €/mes de media). Optimista: 6 (~2.000 €/mes de
+  media). Llegan a golpes, no cada mes: la media sirve para el total del año.
+- **Primer año, realista:** webs 12 × 990 € ≈ 11.900 € + mantenimiento acumulado ≈ 2.500 € +
+  apps 4.000–6.000 € ≈ **18.000–20.000 €**.
+- **Horas:** unos 6 minutos por lead para buscar, preparar y llamar, más 3 h (Esencial), 6,5 h
+  (Profesional) o 12 h (Completa) de trabajo por web. Realista: 200 leads × 6 min + 6 webs ×
+  5,5 h ≈ 53 h/mes ≈ 13 h/semana.
+- **No se incluyen las listas para agencias**, por el riesgo con los términos de Google
+  (sección 11).
+
+</details>
+
+### Qué significa "hacerlo bien"
+
+Lo que separa el escenario conservador del realista no es la suerte, son estos hábitos:
+
+1. **Contactar todas las semanas, sin parar**: unos 50 leads a la semana. Si una semana no
+   llamas, ese mes no vendes. La fase 1 de la sección 11 es lo que te da leads suficientes.
+2. **Llamar y visitar, no solo mandar mensajes.** Con la maqueta en el móvil delante del dueño se
+   cierra mucho más que por WhatsApp, y además es el canal más seguro legalmente.
+3. **Empujar el paquete Profesional.** Pasar de un ticket de 130 € a uno de 165 € es un +25 % sin
+   un solo cliente más.
+4. **Ofrecer mantenimiento en cada venta**, mejor el anual. Es la única parte que crece sola.
+5. **Pedir a cada cliente contento una reseña y un contacto.** En negocios de barrio, un taller
+   te pasa a otro taller. Con 20 clientes, los referidos empiezan a notarse.
+6. **Subir precios tras los primeros 10–15 clientes**, cuando ya tengas trabajos reales que
+   enseñar en la landing. Por ejemplo, el Esencial de 90 € a 120–150 €.
+7. **Medir el embudo.** Marca siempre el resultado de cada llamada. Sin esos datos, estas cuentas
+   no se pueden corregir y el modelo de oportunidad no aprende.
+
+### Cuándo empieza a ser "dinero serio"
+
+- **Solo con webs sueltas hay un techo:** tus horas. A 90–300 € por web, una persona a tiempo
+  parcial difícilmente pasa de **1.000–1.500 €/mes**.
+- **Lo que rompe ese techo es:**
+  - **el mantenimiento acumulado**: 50 clientes son 750 €/mes casi sin trabajo;
+  - **subir los precios** cuando tengas trabajos que enseñar;
+  - **las apps de 2.000 €**: cada una equivale a 12 webs Esenciales.
+- **En el escenario realista**, con webs y mantenimiento se pasa de **1.500 €/mes** hacia el
+  mes 12–16. Con 2–3 apps en el segundo semestre, se llega ya desde el **verano de 2027**.
+- **Más allá de 3.000–4.000 €/mes** ya hay que dedicarle media jornada o más, o subcontratar
+  parte del diseño.
+
+### Lo que hay que restar (bruto ≠ neto)
+
+- **IVA (21 %):**
+  - **Decide si los precios de la landing llevan el IVA incluido o van "+ IVA".** Si lo llevan
+    incluido, de 90 € te quedan 74,38 €.
+  - A negocios se les suele dar el precio sin IVA, porque ellos se lo deducen.
+- **Cuota de autónomo:** con la tarifa plana para nuevos autónomos son unos **80 €/mes** el primer
+  año (confírmalo; cambia según el año y tus ingresos).
+- **IRPF**, gestoría (~40–60 €/mes), dominio, la API de Google si te pasas del cupo gratis y
+  scrape.do si pasas al plan de pago.
+- **Regla rápida:** cuenta con quedarte en limpio con **entre el 60 % y el 70 % del bruto**. En el
+  escenario realista, el mes 12 serían unos **1.300–1.500 € netos al mes** de media.
+
+Antes de facturar de forma habitual, habla con una gestoría: alta de autónomo, IVA, IRPF y si te
+compensa la tarifa plana mientras estudias.
