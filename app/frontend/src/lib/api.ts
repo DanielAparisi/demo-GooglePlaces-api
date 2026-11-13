@@ -8,6 +8,7 @@ import type {
   ModeloOportunidad,
   RawLead,
 } from '../types/lead';
+import type { Pedido, ResultadoLista, ResumenListas } from '../types/lista';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, init);
@@ -50,6 +51,10 @@ export const api = {
   calibrar: () => request<ModeloOportunidad>('/api/oportunidad/calibrar', { method: 'POST' }),
   restablecerModelo: () => request<ModeloOportunidad>('/api/oportunidad/calibrar', { method: 'DELETE' }),
 
+  getListas: () => request<ResumenListas>('/api/listas'),
+  simularLista: (pedido: Pedido) => request<ResultadoLista>('/api/listas/simular', json('POST', pedido)),
+  crearLista: (pedido: Pedido) => request<ResultadoLista>('/api/listas', json('POST', pedido)),
+
   launch: (canal: Canal) => request<LaunchResult>(`/api/${canal}/launch`, { method: 'POST' }),
 
   async getQrBlob(): Promise<Blob> {
@@ -61,3 +66,6 @@ export const api = {
 
 export const maquetaUrl = (archivo: string) =>
   `${API_URL}/maquetas/${encodeURIComponent(archivo)}`;
+
+export const listaUrl = (archivo: string) =>
+  `${API_URL}/api/listas/archivo/${encodeURIComponent(archivo)}`;

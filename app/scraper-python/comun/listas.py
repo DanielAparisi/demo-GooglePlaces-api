@@ -19,19 +19,21 @@ Algoritmo de `crear_lista(leads, pedido, entregas)`:
    "talleres y reformas en Murcia y Cartagena" no salga entera de un único grupo.
 5. Si faltan leads, se sugieren las búsquedas de Google Places que conviene lanzar.
 """
+import csv
 import re
 import unicodedata
 from datetime import date
 from pathlib import Path
 
 from comun.dominio import ciudad_de, nombre_comercial, sector_de
-from comun.ficheros import guardar_json
+from comun.ficheros import escribir_atomico, guardar_json
 from comun.oportunidad import COLUMNAS_REDES, descartado, puntuar
 
+# Suscripción mensual: cada mes se entrega una lista nueva sin repetir leads
 PLANES = {
-    'basico':   {'cantidad': 100, 'exclusivo': False},
-    'estandar': {'cantidad': 300, 'exclusivo': False},
-    'premium':  {'cantidad': 500, 'exclusivo': True},
+    'basico':   {'nombre': 'Básico', 'cantidad': 100, 'exclusivo': False, 'precio': 80},
+    'estandar': {'nombre': 'Estándar', 'cantidad': 300, 'exclusivo': False, 'precio': 150},
+    'premium':  {'nombre': 'Premium', 'cantidad': 500, 'exclusivo': True, 'precio': 300},
 }
 CANALES = ('movil', 'telefono', 'email', 'redes')
 
@@ -209,7 +211,7 @@ def crear_lista(leads, pedido, entregas=(), pesos=None, busquedas_hechas=()):
     faltan = cantidad - len(elegidos)
     return {
         'leads': elegidos,
-        'pedido': {'cliente': cliente, 'cantidad': cantidad, 'sectores': sectores, 'ciudades': ciudades,
+        'pedido': {'cliente': cliente, 'plan': pedido.get('plan') or None, 'cantidad': cantidad, 'sectores': sectores, 'ciudades': ciudades,
                    'requiere': requiere, 'puntuacion_min': minimo, 'exclusivo': exclusivo},
         'resumen': {
             'pedidos': cantidad, 'entregados': len(elegidos), 'faltan': faltan, 'disponibles': len(candidatos),
@@ -268,6 +270,26 @@ def filas_entrega(lista):
             'Por qué': ' · '.join(l['_motivos']),
         })
     return filas
+
+
+def exportar(lista, carpeta):
+    """Escribe el CSV de la entrega en `carpeta` sin pisar otros. Devuelve su ruta."""
+    carpeta = Path(carpeta)
+    carpeta.mkdir(parents=True, exist_ok=True)
+    nombre = f"{normalizar(lista['pedido']['cliente']).replace(' ', '-')}-{len(lista['leads'])}-leads"
+    ruta = carpeta / f"{nombre}.csv"
+    n = 2
+    while ruta.exists():
+        ruta = carpeta / f"{nombre}-{n}.csv"
+        n += 1
+
+    def escribir(f):
+        w = csv.DictWriter(f, fieldnames=COLUMNAS_ENTREGA)
+        w.writeheader()
+        w.writerows(filas_entrega(lista))
+
+    escribir_atomico(ruta, escribir, encoding='utf-8-sig')  # utf-8-sig: Excel abre bien las tildes
+    return ruta
 
 
 def leer_entregas(ruta):

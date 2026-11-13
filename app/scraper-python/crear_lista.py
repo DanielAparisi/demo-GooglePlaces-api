@@ -11,11 +11,9 @@ vuelven a vender a nadie). A un mismo cliente nunca se le repite un lead.
 Cada entrega queda apuntada en entregas.json y el CSV se guarda en listas/.
 """
 import argparse
-import csv
 import sys
 
 from comun import leads_csv, listas, rutas
-from comun.ficheros import escribir_atomico
 from comun.oportunidad import cargar_pesos
 from script import cargar_estado
 
@@ -69,7 +67,7 @@ def main(argv=None):
     if not cantidad:
         parser.error('indica --plan o --cantidad')
 
-    pedido = {'cliente': args.cliente, 'cantidad': cantidad, 'sectores': args.sector, 'ciudades': args.ciudad,
+    pedido = {'cliente': args.cliente, 'plan': args.plan, 'cantidad': cantidad, 'sectores': args.sector, 'ciudades': args.ciudad,
               'requiere': args.requiere, 'puntuacion_min': args.minimo,
               'exclusivo': args.exclusivo or plan.get('exclusivo', False)}
     leads = leads_csv.leer().to_dict('records') if rutas.CSV_FILE.exists() else []
@@ -86,20 +84,7 @@ def main(argv=None):
         print("\n(no se ha exportado ni registrado nada)")
         return 0
 
-    rutas.LISTAS_DIR.mkdir(exist_ok=True)
-    nombre = f"{listas.normalizar(args.cliente).replace(' ', '-')}-{len(lista['leads'])}-leads"
-    ruta = rutas.LISTAS_DIR / f"{nombre}.csv"
-    n = 2
-    while ruta.exists():
-        ruta = rutas.LISTAS_DIR / f"{nombre}-{n}.csv"
-        n += 1
-
-    def escribir(f):
-        w = csv.DictWriter(f, fieldnames=listas.COLUMNAS_ENTREGA)
-        w.writeheader()
-        w.writerows(listas.filas_entrega(lista))
-
-    escribir_atomico(ruta, escribir, encoding='utf-8-sig')  # utf-8-sig: Excel abre bien las tildes
+    ruta = listas.exportar(lista, rutas.LISTAS_DIR)
     entrega = listas.registrar_entrega(rutas.ENTREGAS_FILE, lista, archivo=ruta.name)
     print(f"\n✓ Exportado a {ruta} · entrega '{entrega}' registrada")
     return 0

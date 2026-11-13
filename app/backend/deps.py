@@ -12,6 +12,7 @@ from repositories.leads import LeadsRepository
 from repositories.logs import SendLogsRepository
 from services.contacto import ContactoService
 from services.leads import LeadsService
+from services.listas import ListasService
 from services.oportunidad import OportunidadService
 from services.outreach import OutreachService
 from services.status import StatusService
@@ -24,6 +25,7 @@ class Services:
     contacto: ContactoService
     status: StatusService
     oportunidad: OportunidadService
+    listas: ListasService
 
 
 def build_services(settings: Settings) -> Services:
@@ -35,6 +37,7 @@ def build_services(settings: Settings) -> Services:
         contacto=ContactoService(settings, repo),
         status=StatusService(logs),
         oportunidad=OportunidadService(repo, settings.pesos_file),
+        listas=ListasService(repo, settings),
     )
 
 
@@ -56,3 +59,7 @@ def get_oportunidad_service(request: Request) -> OportunidadService:
 
 def get_status_service(request: Request) -> StatusService:
     return request.app.state.services.status
+
+
+def get_listas_service(request: Request) -> ListasService:
+    return request.app.state.services.listas

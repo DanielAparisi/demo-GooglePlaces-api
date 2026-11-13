@@ -32,6 +32,21 @@ class Settings:
         return self.root / 'pesos_oportunidad.json'
 
     @property
+    def entregas_file(self) -> Path:
+        """Registro de listas vendidas a agencias (también lo usa crear_lista.py)."""
+        return self.root / 'entregas.json'
+
+    @property
+    def listas_dir(self) -> Path:
+        """CSV entregados a agencias."""
+        return self.root / 'listas'
+
+    @property
+    def search_state_file(self) -> Path:
+        """Búsquedas de Google Places ya hechas (para no sugerir repetirlas)."""
+        return self.root / 'app' / 'scraper-python' / 'search_state.json'
+
+    @property
     def maquetas_dir(self) -> Path:
         return self.root / 'maquetas'
 

@@ -5,7 +5,7 @@ from core.errors import AppError
 from core.security import install_security
 from core.settings import Settings
 from deps import build_services
-from routers import contacto, leads, oportunidad, outreach, status
+from routers import contacto, leads, listas, oportunidad, outreach, status
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -19,7 +19,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
 
     install_security(app, settings)
-    for router in (leads.router, oportunidad.router, outreach.router, contacto.router, status.router):
+    for router in (leads.router, listas.router, oportunidad.router, outreach.router, contacto.router, status.router):
         app.include_router(router)
     return app
 

@@ -12,9 +12,9 @@ _SCRAPER_DIR = str(ROOT / 'app' / 'scraper-python')
 if _SCRAPER_DIR not in sys.path:
     sys.path.insert(0, _SCRAPER_DIR)
 
-from comun import calibracion, ia, leads_csv  # noqa: E402
+from comun import calibracion, ia, leads_csv, listas  # noqa: E402
 from comun.dominio import ciudad_de, limpiar_dato, nombre_comercial, sector_de, tipo_telefono  # noqa: E402
 from comun.oportunidad import NOMBRES_BLOQUE, PESOS_BASE, cargar_pesos, puntuar  # noqa: E402
 
-__all__ = ['calibracion', 'ia', 'leads_csv', 'NOMBRES_BLOQUE', 'PESOS_BASE', 'cargar_pesos', 'ciudad_de', 'limpiar_dato', 'nombre_comercial', 'puntuar', 'sector_de',
+__all__ = ['calibracion', 'ia', 'leads_csv', 'listas', 'NOMBRES_BLOQUE', 'PESOS_BASE', 'cargar_pesos', 'ciudad_de', 'limpiar_dato', 'nombre_comercial', 'puntuar', 'sector_de',
            'tipo_telefono']

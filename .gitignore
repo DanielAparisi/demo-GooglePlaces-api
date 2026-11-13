@@ -49,7 +49,7 @@ Thumbs.db
 maquetas/
 
 # Listas vendidas a agencias y su registro (datos de negocios)
-listas/
+/listas/
 entregas.json
 
 # Lista de contactos exportada (datos de negocios)
