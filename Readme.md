@@ -113,6 +113,7 @@ cp .env.example .env
 | `GROQ_API_KEY` | Guiones, maquetas y mensajes con IA | console.groq.com → API Keys |
 | `GMAIL_USER`, `GMAIL_PASSWORD` | Enviar emails | Google → Seguridad → Contraseñas de aplicación |
 | `IG_USER`, `IG_PASS` | Mensajes de Instagram (opcional) | Tu cuenta de Instagram |
+| `LANDING_URL` | Enlace público de las maquetas (opcional) | Tu dominio, p. ej. `https://barriodigital.es` |
 
 Si la IA falla o no hay clave de Groq, guiones, maquetas y mensajes salen igualmente con plantillas.
 
@@ -217,9 +218,11 @@ La caja de búsqueda (atajo `/`) filtra por nombre, categoría, dirección, tel�
 - **Contacto**: teléfono (clic para llamar), email, redes, dirección.
 - **Preparar contacto**:
   - **Generar guion**: guion de llamada con IA adaptado al negocio y su sector.
-  - **Generar maqueta**: crea una web de ejemplo con su nombre y servicios, lista para enseñar
-    (se abre en el navegador; lleva aviso de "no es su web oficial"). *Hoy solo hay plantilla
-    para el sector reformas.*
+  - **Generar maqueta**: crea una web de ejemplo para ese negocio, lista para enseñar. Usa sus
+    datos reales (nombre, ciudad, teléfono, botón de WhatsApp si es móvil, su valoración de Google
+    si es buena) y el tema de su sector: reformas, taller, fisioterapia o uno genérico para el resto.
+    Lleva el aviso "no es su web oficial" y no aparece en Google. Si tienes `LANDING_URL`
+    configurada, aparecen **Copiar enlace** y **Enviar por WhatsApp** para mandársela (ver más abajo).
 - **Resultado del contacto**: marca **No contesta**, **Interesado** o **Descartado**. Queda
   guardado con fecha y alimenta la calibración del modelo.
 
@@ -243,6 +246,22 @@ node app/whatsApp_node/send_whatsapp.js --dry-run
 
 > ⚠ Lanzados a mano sin `--selected-only`, escriben a **todos** los pendientes del CSV.
 > Desde el panel siempre van solo a los seleccionados.
+
+### Mandar la maqueta al negocio
+
+Cada maqueta se guarda en `maquetas/` (para verla tú) y una copia en `landing/public/m/` con un
+código en el nombre que no se puede adivinar (`taller-pepe-3f9a1c0b7e2d.html`). Para que el enlace
+funcione:
+
+1. Pon tu dominio en `LANDING_URL` del `.env` y reinicia `./start.sh`.
+2. Genera (o regenera) la maqueta: el enlace es siempre el mismo para ese negocio.
+3. Despliega la landing **subiendo la carpeta** (las maquetas no van a git porque son datos de
+   negocios): `cd landing && npm run build && npx wrangler pages deploy dist`
+   (o arrastra `dist/` en Netlify).
+4. En la ficha del lead: **Enviar por WhatsApp** abre WhatsApp con el mensaje y el enlace.
+
+Las maquetas publicadas llevan `noindex` y `/m/` está bloqueado en `robots.txt`: no salen en Google.
+Las reglas de diseño de las maquetas están en `.claude/skills/maquetas/SKILL.md`.
 
 ### Paso 4 · Cerrar la venta
 
@@ -370,7 +389,8 @@ Todo vive en la raíz del proyecto. Los que contienen datos de negocios están f
 | `pesos_oportunidad.json` | Pesos calibrados del modelo de oportunidad |
 | `entregas.json` | Listas vendidas: qué leads recibió cada agencia (no repetir, exclusividad) |
 | `listas/` | CSV entregados a agencias |
-| `maquetas/` | Maquetas HTML generadas |
+| `maquetas/` | Maquetas HTML generadas (para verlas en local) |
+| `landing/public/m/`, `.maquetas_secret` | Copias publicables de las maquetas y la clave de sus códigos |
 | `qr.png`, `.wwebjs_auth/` | QR y sesión de WhatsApp. Si falla la vinculación, borra `.wwebjs_auth/` y vuelve a escanear |
 | `app/scraper-python/usage.json`, `search_state.json` | Límite diario y búsquedas ya hechas |
 | `.logs/` | Logs de los servicios de `start.sh` |

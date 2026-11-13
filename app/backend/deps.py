@@ -31,10 +31,11 @@ class Services:
 def build_services(settings: Settings) -> Services:
     repo = LeadsRepository(settings.csv_file)
     logs = SendLogsRepository(settings)
+    contacto = ContactoService(settings, repo)
     return Services(
-        leads=LeadsService(repo, logs, settings.pesos_file),
+        leads=LeadsService(repo, logs, settings.pesos_file, url_maqueta=contacto.url_publica),
         outreach=OutreachService(settings, repo),
-        contacto=ContactoService(settings, repo),
+        contacto=contacto,
         status=StatusService(logs),
         oportunidad=OportunidadService(repo, settings.pesos_file),
         listas=ListasService(repo, settings),

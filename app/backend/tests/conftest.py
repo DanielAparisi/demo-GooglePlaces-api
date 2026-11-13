@@ -48,7 +48,7 @@ def env(tmp_path: Path) -> Env:
     filas = [{**{c: '' for c in COLUMNAS}, **fila} for fila in LEADS]
     pd.DataFrame(filas, columns=COLUMNAS).to_csv(tmp_path / 'Leads Google Maps.csv', index=False, encoding='utf-8-sig')
 
-    settings = Settings(root=tmp_path, allowed_hosts=('testserver',))
+    settings = Settings(root=tmp_path, allowed_hosts=('testserver',), landing_url='')
     app = create_app(settings)
     # Origin permitido por defecto: los endpoints que cambian estado lo exigen
     client = TestClient(app, headers={'Origin': 'http://localhost:4321'})

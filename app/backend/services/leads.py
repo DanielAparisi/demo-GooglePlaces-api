@@ -1,6 +1,7 @@
 """Casos de uso sobre la lista de leads: listado, selección y llamadas."""
 from datetime import date
 from pathlib import Path
+from typing import Callable
 
 import pandas as pd
 
@@ -13,10 +14,12 @@ ESTADOS_LLAMADA = {'', 'No contesta', 'Interesado', 'No interesado'}
 
 
 class LeadsService:
-    def __init__(self, repo: LeadsRepository, logs: SendLogsRepository, pesos_file: Path):
+    def __init__(self, repo: LeadsRepository, logs: SendLogsRepository, pesos_file: Path,
+                 url_maqueta: Callable[[str], str | None] = lambda _: None):
         self.repo = repo
         self.logs = logs
         self.pesos_file = pesos_file
+        self.url_maqueta = url_maqueta  # enlace público de la maqueta, si está publicada
 
     def listar(self) -> list[dict]:
         df = self.repo.read()
@@ -30,6 +33,7 @@ class LeadsService:
             # Se calcula al vuelo: cambia cuando el enriquecido añade email o redes o se recalibra.
             o = puntuar(r, pesos)
             r.update(oportunidad=o['puntuacion'], oportunidad_nivel=o['nivel'], oportunidad_motivos=o['motivos'])
+            r['maqueta_publica'] = self.url_maqueta(r['Maqueta']) if r.get('Maqueta') else None
         return registros[::-1]  # los más recientes primero
 
     def seleccionar(self, ids: list[int], selected: bool) -> None:

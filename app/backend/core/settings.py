@@ -1,5 +1,6 @@
 """Configuración y rutas del backend, en un único sitio."""
-from dataclasses import dataclass
+import os
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # app/backend/core/settings.py → raíz del repositorio
@@ -21,6 +22,9 @@ class Settings:
     allowed_origins: tuple[str, ...] = ('http://localhost:4321', 'http://127.0.0.1:4321')
     # Rechaza cualquier Host que no sea local: evita DNS rebinding.
     allowed_hosts: tuple[str, ...] = ('localhost', '127.0.0.1')
+    # Dominio donde se publica la landing (p. ej. https://barriodigital.es). Con él, cada
+    # maqueta tiene un enlace público para mandarla por WhatsApp. Se lee de LANDING_URL (.env).
+    landing_url: str = field(default_factory=lambda: os.environ.get('LANDING_URL', '').rstrip('/'))
 
     @property
     def csv_file(self) -> Path:
@@ -49,6 +53,19 @@ class Settings:
     @property
     def maquetas_dir(self) -> Path:
         return self.root / 'maquetas'
+
+    @property
+    def maquetas_publicas_dir(self) -> Path:
+        """Copias de las maquetas que se despliegan con la landing (fuera de git)."""
+        return self.root / 'landing' / 'public' / 'm'
+
+    @property
+    def maquetas_secreto_file(self) -> Path:
+        """Clave local para que las URLs públicas de las maquetas no se puedan adivinar."""
+        return self.root / '.maquetas_secret'
+
+    def maqueta_publica_url(self, nombre_publico: str) -> str | None:
+        return f'{self.landing_url}/m/{nombre_publico}' if self.landing_url else None
 
     @property
     def qr_file(self) -> Path:

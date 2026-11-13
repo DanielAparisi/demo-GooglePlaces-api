@@ -141,6 +141,7 @@ export function LeadDrawer({ lead, onClose, onGenerate, onMarkCall }: LeadDrawer
               </a>
             )}
           </div>
+          {lead.Maqueta && <EnlaceMaqueta lead={lead} />}
           {lead.Guion ? (
             <pre className="whitespace-pre-wrap rounded-lg bg-slate-950/60 p-4 font-sans text-sm leading-relaxed text-slate-200 ring-1 ring-inset ring-slate-800">
               {lead.Guion}
@@ -156,6 +157,48 @@ export function LeadDrawer({ lead, onClose, onGenerate, onMarkCall }: LeadDrawer
           </Section>
         )}
       </aside>
+    </div>
+  );
+}
+
+/** Enlace público de la maqueta para mandarlo al negocio (o cómo conseguirlo). */
+function EnlaceMaqueta({ lead }: { lead: Lead }) {
+  const [copiado, setCopiado] = useState(false);
+  const url = lead.maqueta_publica;
+
+  if (!url) {
+    return (
+      <p className="text-xs text-slate-500">
+        Esta maqueta solo se ve en tu ordenador. Para mandarla al negocio, pon <code className="text-slate-400">LANDING_URL</code> en
+        el .env, regenera la maqueta y despliega la landing.
+      </p>
+    );
+  }
+
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      window.prompt('Copia el enlace:', url);
+    }
+  };
+  const movil = lead['Tipo teléfono'] === 'Móvil' ? String(lead['Teléfono'] ?? '').replace(/\D/g, '') : '';
+  const numero = movil.length === 9 ? `34${movil}` : movil;
+  const texto = `Hola, te he preparado una propuesta de cómo podría quedar la web de tu negocio: ${url}`;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-950/40 p-2 ring-1 ring-inset ring-slate-800">
+      <span className="min-w-0 flex-1 truncate px-1 text-xs text-slate-400" title={url}>{url}</span>
+      <button type="button" onClick={() => void copiar()} className={btn('ghost', 'sm')}>
+        {copiado ? 'Copiado ✓' : 'Copiar enlace'}
+      </button>
+      {numero && (
+        <a href={`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`} target="_blank" rel="noopener" className={btn('success', 'sm')}>
+          Enviar por WhatsApp
+        </a>
+      )}
     </div>
   );
 }

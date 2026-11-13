@@ -45,7 +45,7 @@ export const api = {
   setLlamada: (id: number, estado: LlamadaEstado) =>
     request(`/api/leads/${id}/llamada`, json('PATCH', { estado })),
   generar: (id: number, tipo: GeneracionTipo) =>
-    request<{ guion?: string; maqueta?: string }>(`/api/leads/${id}/${tipo}`, { method: 'POST' }),
+    request<{ guion?: string; maqueta?: string; publica?: string | null }>(`/api/leads/${id}/${tipo}`, { method: 'POST' }),
 
   getModelo: () => request<ModeloOportunidad>('/api/oportunidad'),
   calibrar: () => request<ModeloOportunidad>('/api/oportunidad/calibrar', { method: 'POST' }),

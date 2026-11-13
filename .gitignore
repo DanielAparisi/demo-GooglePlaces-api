@@ -46,10 +46,13 @@ Thumbs.db
 *.swo
 
 # Maquetas generadas para leads (llevan datos de negocios)
-maquetas/
+/maquetas/
 
 # Listas vendidas a agencias y su registro (datos de negocios)
 /listas/
+# Maquetas publicadas con la landing y la clave de sus URLs (datos de negocios)
+/landing/public/m/
+/.maquetas_secret
 entregas.json
 
 # Lista de contactos exportada (datos de negocios)

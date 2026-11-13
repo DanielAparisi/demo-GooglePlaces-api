@@ -17,6 +17,8 @@ export interface RawLead {
   oportunidad?: number;
   oportunidad_nivel?: NivelOportunidad;
   oportunidad_motivos?: string[];
+  /** Enlace público de la maqueta (si LANDING_URL está configurada y se ha generado). */
+  maqueta_publica?: string | null;
   'Nombre del negocio'?: Texto;
   'Categoría'?: Texto;
   'Ubicación'?: Texto;

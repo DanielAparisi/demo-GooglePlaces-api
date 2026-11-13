@@ -87,7 +87,7 @@ export function useLeads(notify: Notify) {
     async (id: number, tipo: GeneracionTipo) => {
       try {
         const data = await api.generar(id, tipo);
-        patchLeads(new Set([id]), () => (tipo === 'guion' ? { Guion: data.guion } : { Maqueta: data.maqueta }));
+        patchLeads(new Set([id]), () => (tipo === 'guion' ? { Guion: data.guion } : { Maqueta: data.maqueta, maqueta_publica: data.publica ?? null }));
         notify(tipo === 'guion' ? 'Guion listo' : 'Maqueta lista', 'success');
       } catch (e) {
         notify(errorMsg(e), 'error');
