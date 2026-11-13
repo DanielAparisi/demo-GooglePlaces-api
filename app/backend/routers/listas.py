@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 from deps import get_listas_service
 from schemas.listas import PedidoLista
@@ -22,6 +22,14 @@ def simular(body: PedidoLista, service: ListasService = Depends(get_listas_servi
 @router.post('')
 def crear(body: PedidoLista, service: ListasService = Depends(get_listas_service)):
     return service.crear(body)
+
+
+@router.post('/muestra')
+def muestra(body: PedidoLista, service: ListasService = Depends(get_listas_service)):
+    """CSV de 10 leads para enseñar gratis a una agencia. No registra ninguna entrega."""
+    nombre, contenido = service.muestra_gratis(body)
+    return Response(contenido, media_type='text/csv; charset=utf-8',
+                    headers={'Content-Disposition': f'attachment; filename="{nombre}"'})
 
 
 @router.get('/archivo/{nombre}')

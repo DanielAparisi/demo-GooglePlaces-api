@@ -1,0 +1,31 @@
+---
+import { SITIO, mailLink, waLink } from '../config';
+import Logo from './Logo.astro';
+const anio = new Date().getFullYear();
+---
+<footer class="border-t border-slate-200 bg-white">
+  <div class="contenedor grid gap-8 py-10 sm:grid-cols-3">
+    <div class="space-y-2">
+      <p class="flex items-center gap-2 font-semibold text-tinta"><Logo class="h-7 w-7" /> {SITIO.marca}</p>
+      <p class="text-sm text-slate-500">{SITIO.lema}. Desde {SITIO.ciudad} para toda España.</p>
+    </div>
+    <div class="space-y-2 text-sm">
+      <p class="font-medium text-tinta">Contacto</p>
+      <ul class="space-y-1 text-slate-600">
+        <li><a class="hover:text-brand-700" href={waLink('Hola, quiero información.')} target="_blank" rel="noopener">WhatsApp {SITIO.telefono}</a></li>
+        <li><a class="hover:text-brand-700" href={mailLink(`Información · ${SITIO.marca}`)}>{SITIO.email}</a></li>
+      </ul>
+    </div>
+    <div class="space-y-2 text-sm">
+      <p class="font-medium text-tinta">Servicios</p>
+      <ul class="space-y-1 text-slate-600">
+        <li><a class="hover:text-brand-700" href="/">Webs para negocios locales</a></li>
+        <li><a class="hover:text-brand-700" href="/agencias">Listas de leads para agencias</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="contenedor flex flex-wrap justify-between gap-2 border-t border-slate-100 py-4 text-xs text-slate-500">
+    <span>© {anio} {SITIO.marca}</span>
+    <a class="hover:text-brand-700" href="/aviso-legal">Aviso legal y privacidad</a>
+  </div>
+</footer>

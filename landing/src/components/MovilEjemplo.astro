@@ -1,0 +1,39 @@
+---
+/** Captura falsa de una web en un móvil, dibujada con CSS: sin imágenes que mantener. */
+interface Props {
+  negocio: string;
+  sector: string;
+  titular: string;
+  color: string;
+  servicios: string[];
+}
+const { negocio, sector, titular, color, servicios } = Astro.props;
+---
+<figure class="mx-auto w-full max-w-[15rem]">
+  <div class="rounded-[2rem] border-[6px] border-tinta bg-tinta shadow-card">
+    <div class="overflow-hidden rounded-[1.6rem] bg-white" aria-hidden="true">
+      <div class="px-4 pb-5 pt-6 text-white" style={`background:${color}`}>
+        <p class="text-[10px] font-medium uppercase tracking-wider opacity-80">{sector}</p>
+        <p class="mt-1 text-sm font-semibold leading-snug">{titular}</p>
+        <div class="mt-3 flex gap-1.5">
+          <span class="rounded-md bg-white px-2 py-1 text-[10px] font-semibold" style={`color:${color}`}>Llamar</span>
+          <span class="rounded-md bg-white/20 px-2 py-1 text-[10px] font-semibold">WhatsApp</span>
+        </div>
+      </div>
+      <ul class="space-y-1.5 p-3">
+        {servicios.map((s) => (
+          <li class="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[10px] text-slate-700">
+            <span class="h-1.5 w-1.5 rounded-full" style={`background:${color}`}></span>{s}
+          </li>
+        ))}
+      </ul>
+      <div class="mx-3 mb-3 flex items-center gap-1 rounded-lg border border-slate-100 px-2.5 py-2 text-[10px] text-slate-500">
+        <span class="text-amber-500">★★★★★</span> 4,8 en Google
+      </div>
+    </div>
+  </div>
+  <figcaption class="mt-3 text-center text-sm">
+    <span class="font-medium text-tinta">{negocio}</span>
+    <span class="block text-xs text-slate-500">Diseño de ejemplo</span>
+  </figcaption>
+</figure>

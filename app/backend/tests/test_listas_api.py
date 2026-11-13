@@ -83,3 +83,25 @@ def test_proxima_entrega_es_al_mes_siguiente(env):
 
     assert c['proxima'] == '2026-02-28'
     assert _mes_siguiente(date(2026, 12, 15)) == date(2027, 1, 15)
+
+
+def test_muestra_gratis_descarga_csv_sin_registrar(env):
+    r = env.client.post('/api/listas/muestra', json={'cliente': 'Agencia Luna', 'ciudades': ['Murcia']})
+
+    assert r.status_code == 200
+    assert r.headers['content-disposition'] == 'attachment; filename="muestra-agencia-luna-3-leads.csv"'
+    texto = r.content.decode('utf-8-sig')
+    assert texto.startswith('Negocio,') and len(texto.strip().splitlines()) == 4
+    assert not (env.root / 'entregas.json').exists()
+    assert not (env.root / 'listas').exists()
+
+
+def test_muestra_gratis_no_necesita_cliente_ni_plan(env):
+    r = env.client.post('/api/listas/muestra', json={'cliente': '', 'sectores': ['taller']})
+
+    assert r.status_code == 200
+    assert 'Taller' in r.content.decode('utf-8-sig')
+
+
+def test_muestra_gratis_sin_leads_es_400(env):
+    assert env.client.post('/api/listas/muestra', json={'cliente': 'X', 'ciudades': ['Bilbao']}).status_code == 400

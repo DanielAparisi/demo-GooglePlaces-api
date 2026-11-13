@@ -113,6 +113,7 @@ export default function ListasApp() {
                   previewAlDia={previewAlDia}
                   busy={listas.busy}
                   onSimular={() => void listas.simular(pedido)}
+                  onMuestra={() => void listas.muestra(pedido)}
                   onCrear={() => void crear()}
                 />
               ) : (

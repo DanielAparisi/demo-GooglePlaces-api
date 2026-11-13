@@ -1,0 +1,6 @@
+{
+  "_nota": "Fuente única de los planes de listas: la usan el panel (comun/listas.py) y la landing (landing/src/config.ts). Precio en €/mes.",
+  "basico":   { "nombre": "Básico",   "cantidad": 100, "exclusivo": false, "precio": 80 },
+  "estandar": { "nombre": "Estándar", "cantidad": 300, "exclusivo": false, "precio": 150 },
+  "premium":  { "nombre": "Premium",  "cantidad": 500, "exclusivo": true,  "precio": 300 }
+}

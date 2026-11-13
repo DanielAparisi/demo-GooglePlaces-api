@@ -54,6 +54,16 @@ export const api = {
   getListas: () => request<ResumenListas>('/api/listas'),
   simularLista: (pedido: Pedido) => request<ResultadoLista>('/api/listas/simular', json('POST', pedido)),
   crearLista: (pedido: Pedido) => request<ResultadoLista>('/api/listas', json('POST', pedido)),
+  /** CSV de 10 leads para enseñar gratis a una agencia (no registra entrega). */
+  async muestraLista(pedido: Pedido): Promise<{ blob: Blob; nombre: string }> {
+    const res = await fetch(`${API_URL}/api/listas/muestra`, json('POST', pedido));
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { detail?: string };
+      throw new Error(body.detail || res.statusText || 'Error');
+    }
+    const nombre = /filename="([^"]+)"/.exec(res.headers.get('Content-Disposition') ?? '')?.[1] ?? 'muestra.csv';
+    return { blob: await res.blob(), nombre };
+  },
 
   launch: (canal: Canal) => request<LaunchResult>(`/api/${canal}/launch`, { method: 'POST' }),
 

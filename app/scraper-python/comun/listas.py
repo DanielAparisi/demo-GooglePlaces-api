@@ -20,6 +20,7 @@ Algoritmo de `crear_lista(leads, pedido, entregas)`:
 5. Si faltan leads, se sugieren las búsquedas de Google Places que conviene lanzar.
 """
 import csv
+import json
 import re
 import unicodedata
 from datetime import date
@@ -29,12 +30,10 @@ from comun.dominio import ciudad_de, nombre_comercial, sector_de
 from comun.ficheros import escribir_atomico, guardar_json
 from comun.oportunidad import COLUMNAS_REDES, descartado, puntuar
 
-# Suscripción mensual: cada mes se entrega una lista nueva sin repetir leads
-PLANES = {
-    'basico':   {'nombre': 'Básico', 'cantidad': 100, 'exclusivo': False, 'precio': 80},
-    'estandar': {'nombre': 'Estándar', 'cantidad': 300, 'exclusivo': False, 'precio': 150},
-    'premium':  {'nombre': 'Premium', 'cantidad': 500, 'exclusivo': True, 'precio': 300},
-}
+# Suscripción mensual: cada mes se entrega una lista nueva sin repetir leads.
+# Los planes viven en planes.json porque la landing (landing/) también los publica.
+PLANES = {k: v for k, v in json.loads((Path(__file__).with_name('planes.json')).read_text(encoding='utf-8')).items()
+          if not k.startswith('_')}
 CANALES = ('movil', 'telefono', 'email', 'redes')
 
 # Sector de la lista → búsqueda de script.py (TIPOS_NEGOCIO) para sugerir búsquedas
@@ -283,17 +282,17 @@ def exportar(lista, carpeta):
         ruta = carpeta / f"{nombre}-{n}.csv"
         n += 1
 
-    def escribir(f):
-        w = csv.DictWriter(f, fieldnames=COLUMNAS_ENTREGA)
-        w.writeheader()
-        w.writerows(filas_entrega(lista))
-
-    escribir_atomico(ruta, escribir, encoding='utf-8-sig')  # utf-8-sig: Excel abre bien las tildes
+    escribir_atomico(ruta, lambda f: escribir_csv(f, lista), encoding='utf-8-sig')  # utf-8-sig: Excel abre bien las tildes
     return ruta
 
 
+def escribir_csv(f, lista):
+    w = csv.DictWriter(f, fieldnames=COLUMNAS_ENTREGA)
+    w.writeheader()
+    w.writerows(filas_entrega(lista))
+
+
 def leer_entregas(ruta):
-    import json
     ruta = Path(ruta)
     if not ruta.exists():
         return []

@@ -1,0 +1,35 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITIO } from '../config';
+---
+<Base titulo={`Aviso legal y privacidad · ${SITIO.marca}`} descripcion={`Aviso legal y política de privacidad de ${SITIO.marca}.`}>
+  <article class="contenedor max-w-3xl space-y-8 py-14 text-sm leading-relaxed text-slate-600">
+    <h1 class="text-3xl font-semibold tracking-tight text-tinta">Aviso legal y privacidad</h1>
+
+    <section class="space-y-2">
+      <h2 class="text-lg font-semibold text-tinta">Titular</h2>
+      <p>
+        En cumplimiento de la Ley 34/2002 (LSSI-CE), este sitio web pertenece a {SITIO.titular}, con NIF {SITIO.nif},
+        que opera con el nombre comercial {SITIO.marca}. Contacto: {SITIO.email} · {SITIO.telefono}.
+      </p>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-lg font-semibold text-tinta">Datos personales</h2>
+      <p>
+        Esta web no tiene formularios ni usa cookies de seguimiento. Si nos escribes por WhatsApp o email, usaremos tus
+        datos solo para responderte y, si lo pides, prepararte un presupuesto. Responsable: {SITIO.titular}.
+        Base legal: tu consentimiento y la aplicación de medidas precontractuales. No cedemos tus datos a terceros.
+      </p>
+      <p>
+        Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad escribiendo a
+        {' '}{SITIO.email}, y reclamar ante la Agencia Española de Protección de Datos (aepd.es).
+      </p>
+    </section>
+
+    <section class="space-y-2">
+      <h2 class="text-lg font-semibold text-tinta">Propiedad intelectual</h2>
+      <p>Los textos y diseños de esta web son de {SITIO.marca}. Los ejemplos de webs y de listas son ilustrativos y usan datos inventados.</p>
+    </section>
+  </article>
+</Base>

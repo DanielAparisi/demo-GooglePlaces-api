@@ -1,0 +1,152 @@
+---
+import Base from '../layouts/Base.astro';
+import Check from '../components/Check.astro';
+import Faq from '../components/Faq.astro';
+import MovilEjemplo from '../components/MovilEjemplo.astro';
+import { SITIO, WEB, waLink } from '../config';
+
+const pedirMaqueta = waLink(`Hola, tengo un negocio y me gustaría ver una maqueta gratis de mi web.`);
+
+const ventajas = [
+  { t: 'Te encuentran en Google', d: 'Cuando alguien busca “taller cerca de mí”, tu web y tu ficha aparecen con fotos, horario y reseñas.' },
+  { t: 'Te llaman sin buscar tu número', d: 'Botones de llamar y de WhatsApp a un toque. Pensada para el móvil, que es desde donde te buscan.' },
+  { t: 'Tú no tocas nada', d: 'Nos das cuatro datos y unas fotos; nosotros escribimos los textos, la montamos y la publicamos.' },
+];
+
+const pasos = [
+  { t: 'Nos escribes', d: 'Por WhatsApp, en dos minutos. Dinos qué haces y dónde estás.' },
+  { t: 'Ves tu maqueta gratis', d: 'En 48 h te enseñamos cómo quedaría tu web. Sin compromiso.' },
+  { t: 'Si te gusta, la publicamos', d: `Pagas ${WEB.precio} € y en menos de ${WEB.plazoDias} días está en internet.` },
+];
+
+const ejemplos = [
+  { negocio: 'Taller Mecánico', sector: 'Taller', titular: 'Revisión, frenos y ITV sin esperas', color: '#0f766e', servicios: ['Cambio de aceite', 'Pre-ITV', 'Neumáticos'] },
+  { negocio: 'Reformas Integrales', sector: 'Reformas', titular: 'Reformamos tu baño en 10 días', color: '#b45309', servicios: ['Baños y cocinas', 'Pintura', 'Presupuesto gratis'] },
+  { negocio: 'Clínica de Fisioterapia', sector: 'Fisioterapia', titular: 'Vuelve a moverte sin dolor', color: '#1d4ed8', servicios: ['Fisioterapia deportiva', 'Punción seca', 'Pide cita online'] },
+];
+
+const faq = [
+  { p: '¿Tengo que saber de ordenadores?', r: 'No. Solo necesitamos que nos cuentes qué haces y nos mandes unas fotos por WhatsApp. Del resto nos encargamos nosotros.' },
+  { p: '¿Hay cuotas mensuales?', r: `No. La web cuesta ${WEB.precio} € en un único pago. ${WEB.nota}` },
+  { p: 'Ya tengo Facebook o Instagram, ¿para qué quiero web?', r: 'Las redes no salen bien en Google y no son tuyas. La web aparece cuando te buscan, da confianza y enlaza a tus redes.' },
+  { p: '¿Y si no me gusta la maqueta?', r: 'No pagas nada. La maqueta es gratis y sin compromiso: solo seguimos si te convence.' },
+  { p: '¿Puedo cambiar cosas después?', r: 'Sí. Incluye dos rondas de cambios antes de publicar, y después cualquier ajuste pequeño (horario, teléfono, fotos) te lo hacemos rápido.' },
+];
+---
+<Base
+  titulo={`Página web para tu negocio por ${WEB.precio} € · ${SITIO.marca}`}
+  descripcion={`Webs sencillas para talleres, reformas, clínicas y negocios locales. Maqueta gratis en 48 h y web publicada en ${WEB.plazoDias} días por ${WEB.precio} €, pago único.`}
+  seccion="negocios"
+>
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[32rem] bg-linear-to-b from-brand-50 to-transparent"></div>
+    <div class="contenedor grid items-center gap-12 py-14 sm:py-20 lg:grid-cols-[1.15fr_1fr]">
+      <div class="space-y-6">
+        <p class="eyebrow">Webs para negocios locales</p>
+        <h1 class="text-4xl font-semibold tracking-tight text-balance text-tinta sm:text-5xl">
+          Tu negocio en Google, con web propia, en {WEB.plazoDias} días.
+        </h1>
+        <p class="max-w-xl text-lg leading-relaxed text-slate-600">
+          Para talleres, reformas, clínicas y negocios de barrio que aún no tienen web. Te enseñamos una
+          maqueta{' '}<strong class="font-semibold text-tinta">gratis</strong> y, si te gusta, la publicamos por{' '}
+          <strong class="font-semibold text-tinta">{WEB.precio} €, pago único</strong>.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a href={pedirMaqueta} class="btn btn-primario" target="_blank" rel="noopener">Quiero mi maqueta gratis</a>
+          <a href="#ejemplos" class="btn btn-secundario">Ver ejemplos</a>
+        </div>
+        <ul class="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
+          <li class="flex gap-1.5"><Check /> Sin cuotas mensuales</li>
+          <li class="flex gap-1.5"><Check /> Sin compromiso</li>
+          <li class="flex gap-1.5"><Check /> Trato directo por WhatsApp</li>
+        </ul>
+      </div>
+      <div class="relative hidden justify-center lg:flex">
+        <MovilEjemplo {...ejemplos[0]} />
+      </div>
+    </div>
+  </section>
+
+  <!-- Ventajas -->
+  <section class="contenedor py-14 sm:py-20">
+    <div class="max-w-2xl space-y-2">
+      <p class="eyebrow">Por qué una web</p>
+      <h2 class="titulo-seccion">Si no te encuentran en internet, llaman a la competencia</h2>
+    </div>
+    <div class="mt-10 grid gap-4 md:grid-cols-3">
+      {ventajas.map((v, i) => (
+        <div class="rounded-card border border-slate-200 bg-white p-6 shadow-card">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-sm font-semibold text-brand-700">{i + 1}</span>
+          <h3 class="mt-4 font-semibold text-tinta">{v.t}</h3>
+          <p class="mt-1.5 text-sm leading-relaxed text-slate-600">{v.d}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Ejemplos -->
+  <section id="ejemplos" class="scroll-mt-20 border-y border-slate-200 bg-white py-14 sm:py-20">
+    <div class="contenedor">
+      <div class="max-w-2xl space-y-2">
+        <p class="eyebrow">Ejemplos</p>
+        <h2 class="titulo-seccion">Así puede quedar la tuya</h2>
+        <p class="text-slate-600">Cada web se adapta a tu negocio: colores, textos y fotos tuyas.</p>
+      </div>
+      <div class="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+        {ejemplos.map((e) => <MovilEjemplo {...e} />)}
+      </div>
+    </div>
+  </section>
+
+  <!-- Cómo funciona + precio -->
+  <section class="contenedor grid gap-12 py-14 sm:py-20 lg:grid-cols-2">
+    <div class="space-y-8">
+      <div class="space-y-2">
+        <p class="eyebrow">Cómo funciona</p>
+        <h2 class="titulo-seccion">Tres pasos y sin letra pequeña</h2>
+      </div>
+      <ol class="space-y-6">
+        {pasos.map((p, i) => (
+          <li class="flex gap-4">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">{i + 1}</span>
+            <div>
+              <h3 class="font-semibold text-tinta">{p.t}</h3>
+              <p class="mt-0.5 text-sm text-slate-600">{p.d}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div id="precio" class="scroll-mt-20 rounded-card border border-brand-200 bg-white p-6 shadow-card sm:p-8">
+      <p class="eyebrow">Precio</p>
+      <p class="mt-3 flex items-baseline gap-2">
+        <span class="text-5xl font-semibold tracking-tight text-tinta tabular-nums">{WEB.precio} €</span>
+        <span class="text-sm text-slate-500">pago único</span>
+      </p>
+      <ul class="mt-6 space-y-3 text-sm text-slate-700">
+        {WEB.incluye.map((i) => <li class="flex gap-2.5"><Check />{i}</li>)}
+      </ul>
+      <p class="mt-6 rounded-lg bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-600">{WEB.nota}</p>
+      <a href={pedirMaqueta} class="btn btn-primario mt-6 w-full" target="_blank" rel="noopener">Pedir maqueta gratis</a>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="contenedor max-w-3xl pb-14 sm:pb-20">
+    <h2 class="titulo-seccion mb-6">Preguntas frecuentes</h2>
+    <Faq preguntas={faq} />
+  </section>
+
+  <!-- CTA final -->
+  <section class="contenedor pb-16 sm:pb-24">
+    <div class="rounded-card bg-brand-900 px-6 py-12 text-center sm:px-12">
+      <h2 class="text-2xl font-semibold tracking-tight text-balance text-white sm:text-3xl">
+        ¿Te enseñamos cómo quedaría la web de tu negocio?
+      </h2>
+      <p class="mx-auto mt-3 max-w-xl text-brand-100">Escríbenos por WhatsApp y en 48 h tienes tu maqueta. Gratis y sin compromiso.</p>
+      <a href={pedirMaqueta} class="btn mt-8 bg-white text-brand-900 hover:bg-brand-50" target="_blank" rel="noopener">Quiero mi maqueta gratis</a>
+    </div>
+  </section>
+</Base>

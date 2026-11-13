@@ -1,3 +1,4 @@
+import type { Ocupado } from '../../hooks/useListas';
 import { btn } from '../../lib/ui';
 import type { Plan } from '../../types/lista';
 import { CANALES, euros, type FormPedido } from './formulario';
@@ -9,8 +10,9 @@ interface PedidoFormProps {
   clientes: string[];
   /** La vista previa corresponde exactamente a este formulario: ya se puede crear. */
   previewAlDia: boolean;
-  busy: 'simular' | 'crear' | null;
+  busy: Ocupado;
   onSimular: () => void;
+  onMuestra: () => void;
   onCrear: () => void;
 }
 
@@ -20,7 +22,7 @@ const INPUT =
 const LABEL = 'text-xs font-medium text-slate-300';
 const AYUDA = 'text-xs text-slate-500';
 
-export function PedidoForm({ form, onChange, planes, clientes, previewAlDia, busy, onSimular, onCrear }: PedidoFormProps) {
+export function PedidoForm({ form, onChange, planes, clientes, previewAlDia, busy, onSimular, onMuestra, onCrear }: PedidoFormProps) {
   const set = <K extends keyof FormPedido>(k: K, v: FormPedido[K]) => onChange({ ...form, [k]: v });
   const plan = planes.find((p) => p.id === form.plan);
   const exclusivoPorPlan = Boolean(plan?.exclusivo);
@@ -203,6 +205,15 @@ export function PedidoForm({ form, onChange, planes, clientes, previewAlDia, bus
       </label>
 
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-800 pt-4">
+        <button
+          type="button"
+          onClick={onMuestra}
+          disabled={busy !== null}
+          className={`${btn('ghost', 'md')} mr-auto`}
+          title="Los 10 mejores leads con estos filtros, para enseñar a una agencia. No se registra como entrega."
+        >
+          {busy === 'muestra' ? 'Preparando…' : 'Muestra gratis (10 leads)'}
+        </button>
         {previewAlDia ? (
           <>
             <button type="button" onClick={onSimular} disabled={busy !== null} className={btn('ghost', 'md')}>

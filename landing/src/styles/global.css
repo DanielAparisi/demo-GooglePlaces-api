@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/* Marca: verde azulado cálido (confianza, local) + acento ámbar para precios y avisos. */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: oklch(0.97 0.02 175);
+  --color-brand-100: oklch(0.93 0.04 175);
+  --color-brand-200: oklch(0.87 0.07 175);
+  --color-brand-500: oklch(0.60 0.11 178);
+  --color-brand-600: oklch(0.52 0.10 180);
+  --color-brand-700: oklch(0.44 0.09 182);
+  --color-brand-900: oklch(0.28 0.05 185);
+
+  --color-tinta: oklch(0.22 0.02 200);
+  --color-papel: oklch(0.985 0.006 85);
+
+  --radius-card: 1rem;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 12px 32px -16px rgb(15 23 42 / 0.18);
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  :focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
+}
+
+@layer components {
+  .contenedor { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
+  .btn {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold
+           transition active:scale-[0.98] motion-reduce:transition-none;
+  }
+  .btn-primario { @apply bg-brand-600 text-white shadow-sm hover:bg-brand-700; }
+  .btn-secundario { @apply bg-white text-tinta ring-1 ring-inset ring-slate-300 hover:bg-slate-50; }
+  .eyebrow { @apply text-xs font-semibold uppercase tracking-wider text-brand-700; }
+  .titulo-seccion { @apply text-2xl font-semibold tracking-tight text-tinta sm:text-3xl; }
+}

@@ -1,0 +1,15 @@
+---
+interface Props { preguntas: { p: string; r: string }[] }
+const { preguntas } = Astro.props;
+---
+<div class="divide-y divide-slate-200 rounded-card border border-slate-200 bg-white">
+  {preguntas.map(({ p, r }) => (
+    <details class="group px-5 py-4">
+      <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-tinta">
+        {p}
+        <span class="text-xl leading-none text-slate-400 transition-transform group-open:rotate-45 motion-reduce:transition-none" aria-hidden="true">+</span>
+      </summary>
+      <p class="mt-2 max-w-prose text-sm leading-relaxed text-slate-600">{r}</p>
+    </details>
+  ))}
+</div>

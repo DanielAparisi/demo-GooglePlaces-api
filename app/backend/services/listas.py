@@ -3,6 +3,7 @@
 El algoritmo vive en scraper-python/comun/listas.py (también lo usa crear_lista.py).
 """
 import calendar
+import io
 import json
 import threading
 from datetime import date
@@ -15,6 +16,8 @@ from repositories.leads import LeadsRepository
 from schemas.listas import PedidoLista
 
 MUESTRA = 10
+# Muestra gratuita para captar agencias (LinkedIn): mismos filtros, sin registrar la entrega
+TAM_MUESTRA_GRATIS = 10
 
 # Dos pedidos a la vez podrían vender el mismo lead exclusivo: se crean de uno en uno.
 _creando = threading.Lock()
@@ -125,6 +128,20 @@ class ListasService:
             ruta = listas.exportar(lista, self.settings.listas_dir)
             entrega = listas.registrar_entrega(self.settings.entregas_file, lista, archivo=ruta.name)
         return {**self._respuesta(lista), 'entrega': entrega, 'archivo': ruta.name}
+
+    def muestra_gratis(self, body: PedidoLista) -> tuple[str, bytes]:
+        """CSV con los mejores leads del pedido para enseñar a una agencia. No se registra:
+        esos leads pueden volver a salir en su primera lista de pago."""
+        cliente = body.cliente.strip() or 'muestra'
+        pedido = body.model_copy(update={'cliente': cliente, 'plan': None,
+                                         'cantidad': TAM_MUESTRA_GRATIS, 'exclusivo': False})
+        lista = self._crear_lista(pedido)
+        if not lista['leads']:
+            raise BadRequestError('No hay leads que encajen con este pedido')
+        buffer = io.StringIO()
+        listas.escribir_csv(buffer, lista)
+        nombre = f"muestra-{listas.normalizar(cliente).replace(' ', '-')}-{len(lista['leads'])}-leads.csv"
+        return nombre, buffer.getvalue().encode('utf-8-sig')  # utf-8-sig: Excel abre bien las tildes
 
     def archivo(self, nombre: str) -> Path:
         carpeta = self.settings.listas_dir.resolve()

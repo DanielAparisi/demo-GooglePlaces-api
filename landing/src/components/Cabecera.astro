@@ -1,0 +1,52 @@
+---
+import { SITIO, waLink } from '../config';
+import Logo from './Logo.astro';
+
+interface Props {
+  seccion: 'negocios' | 'agencias' | null;
+}
+const { seccion } = Astro.props;
+const enlaces = [
+  { id: 'negocios', texto: 'Para negocios', href: '/' },
+  { id: 'agencias', texto: 'Para agencias', href: '/agencias' },
+] as const;
+---
+<header class="sticky top-0 z-40 border-b border-slate-200/70 bg-papel/85 backdrop-blur">
+  <div class="contenedor flex h-16 items-center gap-6">
+    <a href="/" class="flex items-center gap-2 font-semibold tracking-tight text-tinta" aria-label={`${SITIO.marca}, inicio`}>
+      <Logo />
+      {SITIO.marca}
+    </a>
+    <nav aria-label="Principal" class="hidden items-center gap-1 sm:flex">
+      {enlaces.map((e) => (
+        <a
+          href={e.href}
+          aria-current={e.id === seccion ? 'page' : undefined}
+          class:list={[
+            'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+            e.id === seccion ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:text-tinta',
+          ]}
+        >
+          {e.texto}
+        </a>
+      ))}
+    </nav>
+    <a href={waLink(`Hola, vengo de vuestra web y quiero información.`)} class="btn btn-primario ml-auto h-9 px-4" target="_blank" rel="noopener">
+      Escríbenos
+    </a>
+  </div>
+  <nav aria-label="Principal (móvil)" class="contenedor flex gap-1 pb-2 sm:hidden">
+    {enlaces.map((e) => (
+      <a
+        href={e.href}
+        aria-current={e.id === seccion ? 'page' : undefined}
+        class:list={[
+          'rounded-lg px-3 py-1.5 text-sm font-medium',
+          e.id === seccion ? 'bg-brand-50 text-brand-700' : 'text-slate-600',
+        ]}
+      >
+        {e.texto}
+      </a>
+    ))}
+  </nav>
+</header>
